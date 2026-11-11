@@ -6,12 +6,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#4f46e5">
-<title>ระบบนับสต๊อก</title>
+<title>ระบบนับสต๊อก (Excel)</title>
 
-<!-- 1. โหลดไลบรารี Supabase -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<!-- 2. โหลด config (ต้องมาก่อน script หลัก) -->
-<script src="config.js"></script>
+<!-- โหลดไลบรารี SheetJS สำหรับจัดการ Excel -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
 
 <style>
   :root {
@@ -167,7 +165,11 @@
 </div>
 
 <div class="actions-bar">
-  <button class="btn btn-secondary" onclick="exportCSV()">📥 ส่งออก CSV</button>
+  <!-- ปุ่มนำเข้า Excel (ซ่อน input ไว้) -->
+  <input type="file" id="excelInput" accept=".xlsx, .xls" style="display:none" onchange="handleExcelUpload(event)">
+  <button class="btn btn-secondary" onclick="document.getElementById('excelInput').click()">📤 นำเข้า Excel</button>
+  
+  <button class="btn btn-secondary" onclick="exportExcel()">📥 ส่งออก Excel</button>
   <button class="btn btn-secondary admin-only" onclick="toggleSelectMode()" disabled id="selectModeBtn">☑️ เลือกลบ</button>
   <button class="btn btn-secondary admin-only" onclick="resetCount()" disabled>🔄 รีเซ็ต</button>
   <button class="btn btn-danger admin-only" onclick="clearAll()" disabled>🗑️ ลบทั้งหมด</button>
@@ -233,19 +235,9 @@
 <div class="toast" id="toast"></div>
 
 <script>
-  // ----------------------------------------------------
-  // ตรวจสอบว่ามีการโหลด config.js และ Supabase หรือไม่
-  // ----------------------------------------------------
-  if (typeof SUPABASE_URL === 'undefined' || typeof SUPABASE_ANON_KEY === 'undefined') {
-    alert('⚠️ ไม่พบไฟล์ config.js หรือค่าเชื่อมต่อฐานข้อมูล!\nกรุณาสร้างไฟล์ config.js ในโฟลเดอร์เดียวกัน');
-  }
-  if (typeof supabase === 'undefined') {
-    alert('⚠️ ไม่สามารถโหลดไลบรารี Supabase ได้ กรุณาตรวจสอบอินเทอร์เน็ต');
-  }
-
-  // สร้างตัวเชื่อมต่อ
-  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
+  // ==========================================
+  // ตั้งค่าฐานข้อมูล (ใช้ LocalStorage เป็น Cache)
+  // ==========================================
   const STORAGE_KEY = 'stock_counter_data_v3';
   const ADMIN_KEY = 'stock_counter_admin_v1';
   const DEFAULT_PIN = '1234';
@@ -262,55 +254,91 @@
   let selectedIds = new Set();
   let pendingDeleteAction = null;
 
-  // ============ Storage: Supabase + cache ============
-  async function loadData() {
+  // ============ Storage: Local + Excel ============
+  function loadData() {
     try { products = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch (e) { products = []; }
     try { adminPin = localStorage.getItem(ADMIN_KEY) || DEFAULT_PIN; } catch (e) { adminPin = DEFAULT_PIN; }
-
-    try {
-      const { data, error } = await supabaseClient.from('products').select('*').order('id', { ascending: true });
-      if (error) { console.error('Supabase load error:', error); showToast('⚠️ ใช้ข้อมูลจาก cache'); }
-      else if (data) { products = data; localStorage.setItem(STORAGE_KEY, JSON.stringify(products)); }
-    } catch (e) { console.error('Load failed:', e); showToast('⚠️ ใช้ข้อมูลจาก cache'); }
-
+    
     updateAdminUI();
     render();
   }
 
-  async function saveData() {
-    // อัปเดต cache ก่อนให้ UI เร็ว
+  function saveData() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
-    
-    // ส่งขึ้น Supabase
-    try {
-      const { error } = await supabaseClient.from('products').upsert(products, { onConflict: 'id' });
-      if (error) { 
-        console.error('Save error:', error); 
-        showToast('❌ บันทึกขึ้นเซิร์ฟเวอร์ไม่สำเร็จ'); 
+  }
+
+  // ============ Excel Import / Export ============
+  function handleExcelUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        
+        // อ่านข้อมูลจาก Excel
+        const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+        
+        if (jsonData.length === 0) {
+          alert('ไม่พบข้อมูลในไฟล์ Excel');
+          return;
+        }
+
+        // แปลงข้อมูลให้ตรงกับระบบ (รองรับทั้งหัวตารางภาษาไทยและอังกฤษ)
+        products = jsonData.map((row) => ({
+          id: row.ID || row.id || genId(),
+          name: row['ชื่อสินค้า'] || row.name || row.Name || 'ไม่มีชื่อ',
+          sku: row['SKU'] || row.sku || row.Sku || '',
+          system: parseInt(row['ในระบบ'] || row.system || row.System || 0) || 0,
+          counted: (row['นับได้'] !== undefined && row['นับได้'] !== '') ? parseInt(row['นับได้']) : null
+        }));
+
+        saveData();
+        render();
+        showToast(`📥 นำเข้าข้อมูล ${products.length} รายการสำเร็จ`);
+      } catch (err) {
+        console.error(err);
+        alert('เกิดข้อผิดพลาดในการอ่านไฟล์ Excel กรุณาตรวจสอบรูปแบบไฟล์');
+      } finally {
+        event.target.value = ''; // เคลียร์ค่าเพื่อให้เลือกไฟล์เดิมซ้ำได้
       }
-    } catch (e) { 
-      console.error('Save failed:', e); 
-      showToast('❌ บันทึกขึ้นเซิร์ฟเวอร์ไม่สำเร็จ'); 
-    }
+    };
+    reader.readAsArrayBuffer(file);
   }
 
-  async function deleteFromDB(ids) {
-    try {
-      const { error } = await supabaseClient.from('products').delete().in('id', ids);
-      if (error) { console.error('Delete error:', error); showToast('❌ ลบไม่สำเร็จ'); return false; }
-      return true;
-    } catch (e) { return false; }
-  }
+  function exportExcel() {
+    if (products.length === 0) { alert('ไม่มีข้อมูลให้ส่งออก'); return; }
 
-  async function deleteAllFromDB() {
-    try {
-      const { error } = await supabaseClient.from('products').delete().neq('id', '___never___');
-      if (error) { console.error('Delete all error:', error); showToast('❌ ลบทั้งหมดไม่สำเร็จ'); return false; }
-      return true;
-    } catch (e) { return false; }
-  }
+    // เตรียมข้อมูลสำหรับ Export
+    const exportData = products.map(p => {
+      const d = getDiff(p);
+      let status = 'ยังไม่นับ';
+      if (d === 0) status = 'ตรง';
+      else if (d !== null && d < 0) status = 'ขาด ' + Math.abs(d);
+      else if (d !== null && d > 0) status = 'เกิน ' + d;
 
-  function saveAdminPin(p) { adminPin = p; localStorage.setItem(ADMIN_KEY, p); }
+      return {
+        'ID': p.id,
+        'ชื่อสินค้า': p.name,
+        'SKU': p.sku || '',
+        'ในระบบ': p.system,
+        'นับได้': (p.counted === null || p.counted === '') ? '' : p.counted,
+        'ผลต่าง': d === null ? '' : d,
+        'สถานะ': status,
+        'วันที่อัปเดต': new Date().toLocaleString('th-TH')
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Stock");
+    
+    XLSX.writeFile(wb, `stock_${new Date().toISOString().slice(0,10)}.xlsx`);
+    showToast('📥 ส่งออก Excel แล้ว');
+  }
 
   // ============ Utils ============
   function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
@@ -421,6 +449,8 @@
     else openPinModal(action);
   }
 
+  function saveAdminPin(p) { adminPin = p; localStorage.setItem(ADMIN_KEY, p); }
+
   // ============ Render ============
   function renderStats() {
     document.getElementById('statTotal').textContent = products.length;
@@ -461,7 +491,7 @@
         <div class="empty-state">
           <div class="icon">📦</div>
           <div class="title">ไม่พบรายการสินค้า</div>
-          <div class="desc">${isAdmin ? 'กดปุ่ม + เพื่อเพิ่มสินค้า' : 'กรุณาให้แอดมินเพิ่มสินค้า'}</div>
+          <div class="desc">${isAdmin ? 'กดปุ่ม + เพื่อเพิ่มสินค้า หรือนำเข้า Excel' : 'กรุณาให้แอดมินเพิ่มสินค้า'}</div>
         </div>`;
       return;
     }
@@ -552,11 +582,9 @@
   function deleteSelected() {
     if (selectedIds.size === 0) return;
     const n = selectedIds.size;
-    const idsToDelete = Array.from(selectedIds);
-    pendingDeleteAction = async () => {
+    pendingDeleteAction = () => {
       products = products.filter(p => !selectedIds.has(p.id));
-      await deleteFromDB(idsToDelete);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
+      saveData();
       exitSelectMode();
       render();
       showToast(`🗑️ ลบ ${n} รายการแล้ว`);
@@ -567,10 +595,9 @@
   function deleteSingle(id) {
     const p = products.find(x => x.id === id);
     if (!p) return;
-    pendingDeleteAction = async () => {
+    pendingDeleteAction = () => {
       products = products.filter(x => x.id !== id);
-      await deleteFromDB([id]);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
+      saveData();
       render();
       showToast('🗑️ ลบสินค้าแล้ว');
     };
@@ -673,10 +700,9 @@
   function clearAll() {
     requireAdmin(() => {
       if (products.length === 0) { showToast('ไม่มีข้อมูลให้ลบ'); return; }
-      pendingDeleteAction = async () => {
+      pendingDeleteAction = () => {
         products = [];
-        await deleteAllFromDB();
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
+        saveData();
         render();
         showToast('🗑️ ลบข้อมูลทั้งหมดแล้ว');
       };
@@ -703,35 +729,6 @@
     saveAdminPin(newP);
     closeModal('changePinModal');
     showToast('✅ เปลี่ยน PIN แล้ว');
-  }
-
-  // ============ Export ============
-  function exportCSV() {
-    if (products.length === 0) { alert('ไม่มีข้อมูลให้ส่งออก'); return; }
-    const rows = [['ชื่อสินค้า','SKU','ในระบบ','นับได้','ผลต่าง','สถานะ']];
-    products.forEach(p => {
-      const d = getDiff(p);
-      let status = 'ยังไม่นับ';
-      if (d === 0) status = 'ตรง';
-      else if (d !== null && d < 0) status = 'ขาด ' + Math.abs(d);
-      else if (d !== null && d > 0) status = 'เกิน ' + d;
-      rows.push([
-        p.name, p.sku || '', p.system,
-        (p.counted === null || p.counted === '') ? '' : p.counted,
-        d === null ? '' : d, status
-      ]);
-    });
-    const csv = '\uFEFF' + rows.map(r =>
-      r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')
-    ).join('\r\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `stock_${new Date().toISOString().slice(0,10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    showToast('📥 ส่งออก CSV แล้ว');
   }
 
   // ============ Modal helpers ============

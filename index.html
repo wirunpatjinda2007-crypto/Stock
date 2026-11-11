@@ -8,438 +8,123 @@
 <meta name="theme-color" content="#4f46e5">
 <title>ระบบนับสต๊อก</title>
 <style>
+  /* ... (CSS ทั้งหมดคงเดิม ไม่มีการแก้ไข) ... */
   :root {
-    --primary: #4f46e5;
-    --primary-dark: #4338ca;
-    --primary-light: #eef2ff;
-    --success: #10b981;
-    --success-light: #d1fae5;
-    --danger: #ef4444;
-    --danger-light: #fee2e2;
-    --warning: #f59e0b;
-    --warning-light: #fef3c7;
-    --bg: #f8fafc;
-    --card: #ffffff;
-    --text: #0f172a;
-    --text-muted: #64748b;
-    --border: #e2e8f0;
-    --shadow-sm: 0 1px 2px rgba(15,23,42,0.04);
-    --shadow-md: 0 4px 12px rgba(15,23,42,0.08);
-    --shadow-lg: 0 10px 30px rgba(15,23,42,0.12);
-    --radius: 14px;
-    --radius-sm: 10px;
+    --primary: #4f46e5; --primary-dark: #4338ca; --primary-light: #eef2ff;
+    --success: #10b981; --success-light: #d1fae5; --danger: #ef4444;
+    --danger-light: #fee2e2; --warning: #f59e0b; --warning-light: #fef3c7;
+    --bg: #f8fafc; --card: #ffffff; --text: #0f172a; --text-muted: #64748b;
+    --border: #e2e8f0; --shadow-sm: 0 1px 2px rgba(15,23,42,0.04);
+    --shadow-md: 0 4px 12px rgba(15,23,42,0.08); --shadow-lg: 0 10px 30px rgba(15,23,42,0.12);
+    --radius: 14px; --radius-sm: 10px;
   }
-
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans Thai", Roboto, sans-serif;
-    margin: 0; padding: 0; background: var(--bg); color: var(--text);
-    padding-bottom: 100px;
-    -webkit-font-smoothing: antialiased;
-    font-size: 15px;
-  }
-
-  /* ============ HEADER ============ */
-  header {
-    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-    color: white;
-    padding: 16px 16px 20px;
-    position: sticky; top: 0; z-index: 10;
-    box-shadow: 0 4px 20px rgba(79,70,229,0.25);
-    border-radius: 0 0 24px 24px;
-    margin-bottom: 0;
-  }
-  .header-top {
-    display: flex; justify-content: space-between; align-items: center;
-    margin-bottom: 14px;
-  }
-  header h1 {
-    margin: 0; font-size: 18px; font-weight: 700;
-    display: flex; align-items: center; gap: 8px; letter-spacing: -0.3px;
-  }
-  .admin-badge {
-    display: inline-flex; align-items: center; gap: 5px;
-    padding: 6px 12px; border-radius: 20px; font-size: 12px;
-    font-weight: 600; cursor: pointer; user-select: none;
-    background: rgba(255,255,255,0.18); color: white;
-    border: 1px solid rgba(255,255,255,0.28);
-    backdrop-filter: blur(10px);
-    transition: all 0.2s;
-  }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans Thai", Roboto, sans-serif; margin: 0; padding: 0; background: var(--bg); color: var(--text); padding-bottom: 100px; -webkit-font-smoothing: antialiased; font-size: 15px; }
+  header { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: white; padding: 16px 16px 20px; position: sticky; top: 0; z-index: 10; box-shadow: 0 4px 20px rgba(79,70,229,0.25); border-radius: 0 0 24px 24px; margin-bottom: 0; }
+  .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  header h1 { margin: 0; font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; letter-spacing: -0.3px; }
+  .admin-badge { display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; user-select: none; background: rgba(255,255,255,0.18); color: white; border: 1px solid rgba(255,255,255,0.28); backdrop-filter: blur(10px); transition: all 0.2s; }
   .admin-badge.unlocked { background: #10b981; border-color: #059669; }
   .admin-badge:active { transform: scale(0.95); }
-
-  /* Stats in header */
-  .stats {
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
-  }
-  .stat-box {
-    background: rgba(255,255,255,0.15);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 12px; padding: 10px 8px; text-align: center;
-  }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .stat-box { background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; padding: 10px 8px; text-align: center; }
   .stat-box .num { font-size: 22px; font-weight: 800; color: white; line-height: 1.1; }
   .stat-box .label { font-size: 11px; color: rgba(255,255,255,0.85); margin-top: 2px; }
-
-  /* ============ SEARCH ============ */
-  .search-bar {
-    padding: 14px 16px 8px; background: var(--bg);
-    position: sticky; top: 0; z-index: 9;
-  }
+  .search-bar { padding: 14px 16px 8px; background: var(--bg); position: sticky; top: 0; z-index: 9; }
   .search-wrapper { position: relative; }
-  .search-wrapper .icon {
-    position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
-    color: var(--text-muted); font-size: 16px; pointer-events: none;
-  }
-  .search-bar input {
-    width: 100%; padding: 12px 16px 12px 42px;
-    border: 1px solid var(--border); background: white;
-    border-radius: 12px; font-size: 15px; outline: none;
-    box-shadow: var(--shadow-sm);
-    transition: all 0.2s;
-  }
-  .search-bar input:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(79,70,229,0.12);
-  }
-
-  /* ============ TABS ============ */
-  .tabs {
-    display: flex; gap: 8px; padding: 8px 16px 12px;
-    overflow-x: auto; background: var(--bg);
-    position: sticky; top: 62px; z-index: 8;
-    scrollbar-width: none;
-  }
+  .search-wrapper .icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 16px; pointer-events: none; }
+  .search-bar input { width: 100%; padding: 12px 16px 12px 42px; border: 1px solid var(--border); background: white; border-radius: 12px; font-size: 15px; outline: none; box-shadow: var(--shadow-sm); transition: all 0.2s; }
+  .search-bar input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,0.12); }
+  .tabs { display: flex; gap: 8px; padding: 8px 16px 12px; overflow-x: auto; background: var(--bg); position: sticky; top: 62px; z-index: 8; scrollbar-width: none; }
   .tabs::-webkit-scrollbar { display: none; }
-  .tab {
-    padding: 8px 16px; border-radius: 20px; cursor: pointer;
-    font-size: 13px; font-weight: 600; color: var(--text-muted);
-    background: white; border: 1px solid var(--border);
-    white-space: nowrap; transition: all 0.2s;
-    box-shadow: var(--shadow-sm);
-  }
-  .tab.active {
-    background: var(--primary); color: white;
-    border-color: var(--primary);
-    box-shadow: 0 4px 12px rgba(79,70,229,0.3);
-  }
+  .tab { padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text-muted); background: white; border: 1px solid var(--border); white-space: nowrap; transition: all 0.2s; box-shadow: var(--shadow-sm); }
+  .tab.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 4px 12px rgba(79,70,229,0.3); }
   .tab:active { transform: scale(0.96); }
-
-  /* ============ ACTIONS BAR ============ */
-  .actions-bar {
-    display: flex; gap: 8px; padding: 0 16px 14px;
-    overflow-x: auto; scrollbar-width: none;
-  }
+  .actions-bar { display: flex; gap: 8px; padding: 0 16px 14px; overflow-x: auto; scrollbar-width: none; }
   .actions-bar::-webkit-scrollbar { display: none; }
   .actions-bar .btn { white-space: nowrap; font-size: 13px; padding: 9px 14px; }
-
-  /* ============ PRODUCT LIST ============ */
   .product-list { padding: 0 16px; }
-
-  .product-card {
-    background: var(--card); border-radius: var(--radius);
-    padding: 14px 14px 14px 14px;
-    margin-bottom: 12px;
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--border);
-    position: relative;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    animation: fadeIn 0.3s ease-out;
-  }
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
+  .product-card { background: var(--card); border-radius: var(--radius); padding: 14px; margin-bottom: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border); position: relative; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); animation: fadeIn 0.3s ease-out; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
   .product-card:active { transform: scale(0.995); }
-
   .product-card.ok { border-left: 4px solid var(--success); }
   .product-card.short { border-left: 4px solid var(--danger); }
   .product-card.over { border-left: 4px solid var(--warning); }
   .product-card.plain { border-left: 4px solid var(--border); }
-
-  /* Selection mode */
   body.select-mode .product-card { cursor: pointer; }
-  body.select-mode .product-card .count-controls,
-  body.select-mode .product-card .edit-btn { pointer-events: none; opacity: 0.4; }
-  body.select-mode .product-card.selected {
-    border-color: var(--primary);
-    background: var(--primary-light);
-    box-shadow: 0 0 0 2px var(--primary), var(--shadow-md);
-  }
-  .product-card .checkbox {
-    display: none;
-    position: absolute; top: 14px; right: 14px;
-    width: 22px; height: 22px; border-radius: 50%;
-    border: 2px solid var(--border); background: white;
-    align-items: center; justify-content: center;
-    transition: all 0.2s; z-index: 2;
-  }
+  body.select-mode .product-card .count-controls, body.select-mode .product-card .edit-btn { pointer-events: none; opacity: 0.4; }
+  body.select-mode .product-card.selected { border-color: var(--primary); background: var(--primary-light); box-shadow: 0 0 0 2px var(--primary), var(--shadow-md); }
+  .product-card .checkbox { display: none; position: absolute; top: 14px; right: 14px; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border); background: white; align-items: center; justify-content: center; transition: all 0.2s; z-index: 2; }
   body.select-mode .product-card .checkbox { display: flex; }
   body.select-mode .product-card .delete-btn { display: none; }
-  .product-card.selected .checkbox {
-    background: var(--primary); border-color: var(--primary);
-    color: white; font-size: 13px; font-weight: bold;
-  }
+  .product-card.selected .checkbox { background: var(--primary); border-color: var(--primary); color: white; font-size: 13px; font-weight: bold; }
   .product-card.selected .checkbox::after { content: '✓'; }
-
-  .product-name {
-    font-weight: 600; font-size: 15px; margin-bottom: 4px;
-    padding-right: 28px; line-height: 1.3;
-  }
-  .product-sku {
-    font-size: 12px; color: var(--text-muted); margin-bottom: 8px;
-    display: inline-block;
-    background: var(--bg); padding: 2px 8px; border-radius: 6px;
-    font-family: ui-monospace, monospace;
-  }
-  .product-info {
-    font-size: 13px; color: var(--text-muted);
-    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
-    margin-bottom: 10px;
-  }
+  .product-name { font-weight: 600; font-size: 15px; margin-bottom: 4px; padding-right: 28px; line-height: 1.3; }
+  .product-sku { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; display: inline-block; background: var(--bg); padding: 2px 8px; border-radius: 6px; font-family: ui-monospace, monospace; }
+  .product-info { font-size: 13px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
   .product-info strong { color: var(--text); font-weight: 700; }
-
-  .product-row {
-    display: flex; justify-content: space-between; align-items: center; gap: 10px;
-  }
+  .product-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
   .count-controls { display: flex; align-items: center; gap: 4px; }
-  .count-controls button {
-    width: 38px; height: 38px; border-radius: 10px; border: none;
-    background: var(--primary-light); color: var(--primary);
-    font-size: 20px; font-weight: 700;
-    cursor: pointer; display: flex; align-items: center; justify-content: center;
-    transition: all 0.15s;
-  }
+  .count-controls button { width: 38px; height: 38px; border-radius: 10px; border: none; background: var(--primary-light); color: var(--primary); font-size: 20px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
   .count-controls button:active { background: #c7d2fe; transform: scale(0.92); }
-  .count-controls input {
-    width: 64px; height: 38px; text-align: center;
-    border: 1.5px solid var(--border); border-radius: 10px;
-    font-size: 15px; font-weight: 700; outline: none;
-    background: white; transition: all 0.2s;
-  }
-  .count-controls input:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(79,70,229,0.12);
-  }
-
-  .diff-badge {
-    display: inline-block; padding: 3px 9px; border-radius: 12px;
-    font-size: 11px; font-weight: 700;
-  }
+  .count-controls input { width: 64px; height: 38px; text-align: center; border: 1.5px solid var(--border); border-radius: 10px; font-size: 15px; font-weight: 700; outline: none; background: white; transition: all 0.2s; }
+  .count-controls input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,0.12); }
+  .diff-badge { display: inline-block; padding: 3px 9px; border-radius: 12px; font-size: 11px; font-weight: 700; }
   .diff-badge.ok { background: var(--success-light); color: #047857; }
   .diff-badge.short { background: var(--danger-light); color: #b91c1c; }
   .diff-badge.over { background: var(--warning-light); color: #b45309; }
-
-  .edit-btn {
-    padding: 8px 14px; border-radius: 10px; border: none;
-    background: var(--bg); color: var(--text);
-    font-size: 13px; font-weight: 600; cursor: pointer;
-    transition: all 0.15s;
-  }
+  .edit-btn { padding: 8px 14px; border-radius: 10px; border: none; background: var(--bg); color: var(--text); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
   .edit-btn:active { background: var(--border); transform: scale(0.95); }
-
-  .delete-btn {
-    background: var(--danger-light); border: none; color: var(--danger);
-    font-size: 14px; cursor: pointer; padding: 6px 10px;
-    border-radius: 8px; position: absolute; top: 12px; right: 12px;
-    transition: all 0.15s;
-  }
+  .delete-btn { background: var(--danger-light); border: none; color: var(--danger); font-size: 14px; cursor: pointer; padding: 6px 10px; border-radius: 8px; position: absolute; top: 12px; right: 12px; transition: all 0.15s; }
   .delete-btn:active { transform: scale(0.9); }
-
-  /* ============ BUTTONS ============ */
-  .btn {
-    padding: 11px 18px; border-radius: 12px; border: none;
-    font-size: 14px; font-weight: 600; cursor: pointer;
-    display: inline-flex; align-items: center; gap: 6px;
-    justify-content: center;
-    transition: all 0.15s;
-    font-family: inherit;
-  }
+  .btn { padding: 11px 18px; border-radius: 12px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; justify-content: center; transition: all 0.15s; font-family: inherit; }
   .btn:active { transform: scale(0.97); }
   .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-  .btn-primary {
-    background: var(--primary); color: white;
-    box-shadow: 0 4px 12px rgba(79,70,229,0.3);
-  }
+  .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(79,70,229,0.3); }
   .btn-primary:active { background: var(--primary-dark); }
-  .btn-secondary {
-    background: white; color: var(--text); border: 1px solid var(--border);
-    box-shadow: var(--shadow-sm);
-  }
+  .btn-secondary { background: white; color: var(--text); border: 1px solid var(--border); box-shadow: var(--shadow-sm); }
   .btn-secondary:active { background: var(--bg); }
-  .btn-danger {
-    background: var(--danger-light); color: var(--danger);
-  }
+  .btn-danger { background: var(--danger-light); color: var(--danger); }
   .btn-danger:active { background: #fecaca; }
-  .btn-success {
-    background: var(--success); color: white;
-    box-shadow: 0 4px 12px rgba(16,185,129,0.3);
-  }
-
-  /* ============ FAB ============ */
-  .fab {
-    position: fixed; bottom: 24px; right: 20px;
-    width: 58px; height: 58px; border-radius: 50%;
-    background: var(--primary); color: white; border: none;
-    font-size: 30px; font-weight: 300;
-    box-shadow: 0 8px 24px rgba(79,70,229,0.4);
-    cursor: pointer; z-index: 20;
-    display: flex; align-items: center; justify-content: center;
-    transition: all 0.2s;
-  }
+  .btn-success { background: var(--success); color: white; box-shadow: 0 4px 12px rgba(16,185,129,0.3); }
+  .fab { position: fixed; bottom: 24px; right: 20px; width: 58px; height: 58px; border-radius: 50%; background: var(--primary); color: white; border: none; font-size: 30px; font-weight: 300; box-shadow: 0 8px 24px rgba(79,70,229,0.4); cursor: pointer; z-index: 20; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
   .fab:active { background: var(--primary-dark); transform: scale(0.92); }
   .fab.hidden { display: none; }
-
-  /* ============ SELECTION ACTION BAR ============ */
-  .selection-bar {
-    position: fixed; bottom: 0; left: 0; right: 0;
-    background: white; padding: 12px 16px 20px;
-    box-shadow: 0 -4px 20px rgba(15,23,42,0.1);
-    border-radius: 20px 20px 0 0;
-    z-index: 30;
-    transform: translateY(100%);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex; gap: 10px; align-items: center;
-  }
+  .selection-bar { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 12px 16px 20px; box-shadow: 0 -4px 20px rgba(15,23,42,0.1); border-radius: 20px 20px 0 0; z-index: 30; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; gap: 10px; align-items: center; }
   .selection-bar.show { transform: translateY(0); }
-  .selection-bar .count {
-    font-size: 14px; font-weight: 600; color: var(--text);
-    flex-shrink: 0;
-  }
+  .selection-bar .count { font-size: 14px; font-weight: 600; color: var(--text); flex-shrink: 0; }
   .selection-bar .count strong { color: var(--primary); }
   .selection-bar .btn { flex: 1; }
-
-  /* ============ MODAL ============ */
-  .modal {
-    display: none; position: fixed; inset: 0;
-    background: rgba(15,23,42,0.5);
-    backdrop-filter: blur(4px);
-    z-index: 100; align-items: flex-end; justify-content: center;
-    animation: modalFadeIn 0.2s ease-out;
-  }
+  .modal { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.5); backdrop-filter: blur(4px); z-index: 100; align-items: flex-end; justify-content: center; animation: modalFadeIn 0.2s ease-out; }
   @keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
   .modal.show { display: flex; }
-
-  .modal-content {
-    background: white; width: 100%; max-width: 500px;
-    border-radius: 24px 24px 0 0;
-    padding: 24px 20px 24px; max-height: 90vh; overflow-y: auto;
-    animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    padding-bottom: calc(24px + env(safe-area-inset-bottom));
-  }
+  .modal-content { background: white; width: 100%; max-width: 500px; border-radius: 24px 24px 0 0; padding: 24px 20px 24px; max-height: 90vh; overflow-y: auto; animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1); padding-bottom: calc(24px + env(safe-area-inset-bottom)); }
   @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-
-  .modal-handle {
-    width: 40px; height: 4px; border-radius: 2px;
-    background: var(--border); margin: -8px auto 16px;
-  }
-  .modal-content h2 {
-    margin: 0 0 18px; font-size: 19px; font-weight: 700;
-    letter-spacing: -0.3px;
-  }
-
+  .modal-handle { width: 40px; height: 4px; border-radius: 2px; background: var(--border); margin: -8px auto 16px; }
+  .modal-content h2 { margin: 0 0 18px; font-size: 19px; font-weight: 700; letter-spacing: -0.3px; }
   .form-group { margin-bottom: 14px; }
-  .form-group label {
-    display: block; font-size: 13px; font-weight: 600;
-    margin-bottom: 6px; color: var(--text);
-  }
-  .form-group input {
-    width: 100%; padding: 12px 14px;
-    border: 1.5px solid var(--border); border-radius: 12px;
-    font-size: 15px; outline: none; font-family: inherit;
-    transition: all 0.2s;
-  }
-  .form-group input:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(79,70,229,0.12);
-  }
-  .modal-actions {
-    display: flex; gap: 10px; margin-top: 18px;
-  }
+  .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+  .form-group input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 12px; font-size: 15px; outline: none; font-family: inherit; transition: all 0.2s; }
+  .form-group input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,0.12); }
+  .modal-actions { display: flex; gap: 10px; margin-top: 18px; }
   .modal-actions .btn { flex: 1; padding: 13px; }
-
-  /* ============ EMPTY STATE ============ */
-  .empty-state {
-    text-align: center; padding: 60px 20px; color: var(--text-muted);
-    animation: fadeIn 0.4s ease-out;
-  }
-  .empty-state .icon {
-    font-size: 64px; margin-bottom: 16px;
-    animation: float 3s ease-in-out infinite;
-  }
-  @keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-8px); }
-  }
-  .empty-state .title {
-    font-size: 16px; font-weight: 600; color: var(--text);
-    margin-bottom: 6px;
-  }
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); animation: fadeIn 0.4s ease-out; }
+  .empty-state .icon { font-size: 64px; margin-bottom: 16px; animation: float 3s ease-in-out infinite; }
+  @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+  .empty-state .title { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
   .empty-state .desc { font-size: 13px; }
-
-  /* ============ TOAST ============ */
-  .toast {
-    position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px);
-    background: #0f172a; color: white;
-    padding: 12px 22px; border-radius: 24px;
-    font-size: 13px; font-weight: 500;
-    z-index: 200; opacity: 0;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    pointer-events: none; white-space: nowrap;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-  }
+  .toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px); background: #0f172a; color: white; padding: 12px 22px; border-radius: 24px; font-size: 13px; font-weight: 500; z-index: 200; opacity: 0; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); pointer-events: none; white-space: nowrap; box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-  /* ============ READONLY BANNER ============ */
-  .readonly-banner {
-    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-    color: #92400e; font-size: 12px; font-weight: 500;
-    text-align: center; padding: 10px 12px;
-    border-bottom: 1px solid #fde68a;
-  }
-
-  /* ============ PIN MODAL ============ */
-  .pin-display {
-    display: flex; justify-content: center; gap: 14px; margin: 20px 0 24px;
-  }
-  .pin-dot {
-    width: 16px; height: 16px; border-radius: 50%;
-    background: var(--bg); border: 2px solid var(--border);
-    transition: all 0.2s;
-  }
-  .pin-dot.filled {
-    background: var(--primary); border-color: var(--primary);
-    transform: scale(1.15);
-  }
-  .pin-pad {
-    display: grid; grid-template-columns: repeat(3, 1fr);
-    gap: 10px; max-width: 300px; margin: 0 auto;
-  }
-  .pin-btn {
-    padding: 18px; border-radius: 14px; border: none;
-    background: var(--bg); font-size: 22px; font-weight: 600;
-    color: var(--text); cursor: pointer; font-family: inherit;
-    transition: all 0.15s;
-  }
-  .pin-btn:active {
-    background: var(--primary-light);
-    color: var(--primary); transform: scale(0.92);
-  }
-  .pin-btn.action {
-    background: transparent; font-size: 15px; color: var(--text-muted);
-  }
-  .pin-error {
-    color: var(--danger); text-align: center; font-size: 13px;
-    font-weight: 500; margin-top: 14px; min-height: 18px;
-  }
-  .admin-note {
-    font-size: 13px; color: var(--text-muted);
-    text-align: center; padding: 0 20px;
-  }
-
-  /* ============ RESPONSIVE ============ */
+  .readonly-banner { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); color: #92400e; font-size: 12px; font-weight: 500; text-align: center; padding: 10px 12px; border-bottom: 1px solid #fde68a; }
+  .pin-display { display: flex; justify-content: center; gap: 14px; margin: 20px 0 24px; }
+  .pin-dot { width: 16px; height: 16px; border-radius: 50%; background: var(--bg); border: 2px solid var(--border); transition: all 0.2s; }
+  .pin-dot.filled { background: var(--primary); border-color: var(--primary); transform: scale(1.15); }
+  .pin-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 300px; margin: 0 auto; }
+  .pin-btn { padding: 18px; border-radius: 14px; border: none; background: var(--bg); font-size: 22px; font-weight: 600; color: var(--text); cursor: pointer; font-family: inherit; transition: all 0.15s; }
+  .pin-btn:active { background: var(--primary-light); color: var(--primary); transform: scale(0.92); }
+  .pin-btn.action { background: transparent; font-size: 15px; color: var(--text-muted); }
+  .pin-error { color: var(--danger); text-align: center; font-size: 13px; font-weight: 500; margin-top: 14px; min-height: 18px; }
+  .admin-note { font-size: 13px; color: var(--text-muted); text-align: center; padding: 0 20px; }
   @media (min-width: 640px) {
     body { max-width: 640px; margin: 0 auto; }
     .modal-content { border-radius: 20px; margin-bottom: 20px; }
@@ -447,9 +132,12 @@
     .selection-bar.show { transform: translateX(-50%) translateY(0); }
   }
 </style>
+<!-- 1. โหลดไลบรารี Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
+<!-- (ส่วน HTML ทั้งหมดคงเดิม ไม่มีการแก้ไข) -->
 <header>
   <div class="header-top">
     <h1>📦 นับสต๊อก</h1>
@@ -459,39 +147,19 @@
     </div>
   </div>
   <div class="stats">
-    <div class="stat-box">
-      <div class="num" id="statTotal">0</div>
-      <div class="label">สินค้าทั้งหมด</div>
-    </div>
-    <div class="stat-box">
-      <div class="num" id="statCounted">0</div>
-      <div class="label">นับแล้ว</div>
-    </div>
-    <div class="stat-box">
-      <div class="num" id="statDiff">0</div>
-      <div class="label">รายการต่าง</div>
-    </div>
+    <div class="stat-box"><div class="num" id="statTotal">0</div><div class="label">สินค้าทั้งหมด</div></div>
+    <div class="stat-box"><div class="num" id="statCounted">0</div><div class="label">นับแล้ว</div></div>
+    <div class="stat-box"><div class="num" id="statDiff">0</div><div class="label">รายการต่าง</div></div>
   </div>
 </header>
-
-<div id="readonlyBanner" class="readonly-banner" style="display:none;">
-  👤 โหมดทั่วไป — นับสต๊อกได้ แต่ไม่สามารถเพิ่ม/แก้ไข/ลบสินค้าได้
-</div>
-
-<div class="search-bar">
-  <div class="search-wrapper">
-    <span class="icon">🔍</span>
-    <input type="text" id="searchInput" placeholder="ค้นหาชื่อสินค้า หรือ SKU...">
-  </div>
-</div>
-
+<div id="readonlyBanner" class="readonly-banner" style="display:none;">👤 โหมดทั่วไป — นับสต๊อกได้ แต่ไม่สามารถเพิ่ม/แก้ไข/ลบสินค้าได้</div>
+<div class="search-bar"><div class="search-wrapper"><span class="icon">🔍</span><input type="text" id="searchInput" placeholder="ค้นหาชื่อสินค้า หรือ SKU..."></div></div>
 <div class="tabs">
   <div class="tab active" data-tab="all">ทั้งหมด</div>
   <div class="tab" data-tab="pending">ยังไม่นับ</div>
   <div class="tab" data-tab="done">นับแล้ว</div>
   <div class="tab" data-tab="diff">ต่าง</div>
 </div>
-
 <div class="actions-bar">
   <button class="btn btn-secondary" onclick="exportCSV()">📥 ส่งออก CSV</button>
   <button class="btn btn-secondary admin-only" onclick="toggleSelectMode()" disabled id="selectModeBtn">☑️ เลือกลบ</button>
@@ -499,115 +167,67 @@
   <button class="btn btn-danger admin-only" onclick="clearAll()" disabled>🗑️ ลบทั้งหมด</button>
   <button class="btn btn-secondary admin-only" onclick="openChangePinModal()" disabled>🔑 เปลี่ยน PIN</button>
 </div>
-
 <div class="product-list" id="productList"></div>
-
 <button class="fab hidden" id="fabAdd" onclick="openAddModal()">+</button>
-
-<!-- Selection Action Bar -->
 <div class="selection-bar" id="selectionBar">
-  <div class="count">
-    เลือกแล้ว <strong id="selectedCount">0</strong> รายการ
-  </div>
+  <div class="count">เลือกแล้ว <strong id="selectedCount">0</strong> รายการ</div>
   <button class="btn btn-secondary" onclick="toggleSelectMode()">ยกเลิก</button>
   <button class="btn btn-danger" onclick="deleteSelected()" id="deleteSelectedBtn" disabled>🗑️ ลบ</button>
 </div>
-
-<!-- Product Modal -->
 <div class="modal" id="productModal">
   <div class="modal-content">
     <div class="modal-handle"></div>
     <h2 id="modalTitle">เพิ่มสินค้า</h2>
-    <div class="form-group">
-      <label>ชื่อสินค้า *</label>
-      <input type="text" id="inputName" placeholder="เช่น น้ำดื่ม 600ml">
-    </div>
-    <div class="form-group">
-      <label>SKU / รหัสสินค้า</label>
-      <input type="text" id="inputSku" placeholder="เช่น SKU001">
-    </div>
-    <div class="form-group">
-      <label>จำนวนในระบบ *</label>
-      <input type="number" id="inputSystem" placeholder="0" min="0" inputmode="numeric">
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="closeModal('productModal')">ยกเลิก</button>
-      <button class="btn btn-primary" onclick="saveProduct()">บันทึก</button>
-    </div>
+    <div class="form-group"><label>ชื่อสินค้า *</label><input type="text" id="inputName" placeholder="เช่น น้ำดื่ม 600ml"></div>
+    <div class="form-group"><label>SKU / รหัสสินค้า</label><input type="text" id="inputSku" placeholder="เช่น SKU001"></div>
+    <div class="form-group"><label>จำนวนในระบบ *</label><input type="number" id="inputSystem" placeholder="0" min="0" inputmode="numeric"></div>
+    <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal('productModal')">ยกเลิก</button><button class="btn btn-primary" onclick="saveProduct()">บันทึก</button></div>
   </div>
 </div>
-
-<!-- PIN Modal -->
 <div class="modal" id="pinModal">
   <div class="modal-content" style="max-width:360px">
     <div class="modal-handle"></div>
     <h2 id="pinTitle" style="text-align:center">🔐 เข้าสู่โหมดแอดมิน</h2>
     <div class="admin-note">ใส่รหัส PIN 4 หลัก</div>
-    <div class="pin-display" id="pinDisplay">
-      <div class="pin-dot"></div>
-      <div class="pin-dot"></div>
-      <div class="pin-dot"></div>
-      <div class="pin-dot"></div>
-    </div>
+    <div class="pin-display" id="pinDisplay"><div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div></div>
     <div class="pin-pad" id="pinPad">
-      <button class="pin-btn" onclick="pinInput('1')">1</button>
-      <button class="pin-btn" onclick="pinInput('2')">2</button>
-      <button class="pin-btn" onclick="pinInput('3')">3</button>
-      <button class="pin-btn" onclick="pinInput('4')">4</button>
-      <button class="pin-btn" onclick="pinInput('5')">5</button>
-      <button class="pin-btn" onclick="pinInput('6')">6</button>
-      <button class="pin-btn" onclick="pinInput('7')">7</button>
-      <button class="pin-btn" onclick="pinInput('8')">8</button>
-      <button class="pin-btn" onclick="pinInput('9')">9</button>
-      <button class="pin-btn action" onclick="closeModal('pinModal')">ยกเลิก</button>
-      <button class="pin-btn" onclick="pinInput('0')">0</button>
-      <button class="pin-btn action" onclick="pinBackspace()">⌫</button>
+      <button class="pin-btn" onclick="pinInput('1')">1</button><button class="pin-btn" onclick="pinInput('2')">2</button><button class="pin-btn" onclick="pinInput('3')">3</button>
+      <button class="pin-btn" onclick="pinInput('4')">4</button><button class="pin-btn" onclick="pinInput('5')">5</button><button class="pin-btn" onclick="pinInput('6')">6</button>
+      <button class="pin-btn" onclick="pinInput('7')">7</button><button class="pin-btn" onclick="pinInput('8')">8</button><button class="pin-btn" onclick="pinInput('9')">9</button>
+      <button class="pin-btn action" onclick="closeModal('pinModal')">ยกเลิก</button><button class="pin-btn" onclick="pinInput('0')">0</button><button class="pin-btn action" onclick="pinBackspace()">⌫</button>
     </div>
     <div class="pin-error" id="pinError"></div>
   </div>
 </div>
-
-<!-- Change PIN Modal -->
 <div class="modal" id="changePinModal">
   <div class="modal-content" style="max-width:400px">
     <div class="modal-handle"></div>
     <h2>🔑 เปลี่ยน PIN</h2>
-    <div class="form-group">
-      <label>PIN เดิม</label>
-      <input type="password" id="oldPin" placeholder="••••" maxlength="4" inputmode="numeric">
-    </div>
-    <div class="form-group">
-      <label>PIN ใหม่ (4 หลัก)</label>
-      <input type="password" id="newPin" placeholder="••••" maxlength="4" inputmode="numeric">
-    </div>
-    <div class="form-group">
-      <label>ยืนยัน PIN ใหม่</label>
-      <input type="password" id="confirmPin" placeholder="••••" maxlength="4" inputmode="numeric">
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="closeModal('changePinModal')">ยกเลิก</button>
-      <button class="btn btn-primary" onclick="changePin()">บันทึก</button>
-    </div>
+    <div class="form-group"><label>PIN เดิม</label><input type="password" id="oldPin" placeholder="••••" maxlength="4" inputmode="numeric"></div>
+    <div class="form-group"><label>PIN ใหม่ (4 หลัก)</label><input type="password" id="newPin" placeholder="••••" maxlength="4" inputmode="numeric"></div>
+    <div class="form-group"><label>ยืนยัน PIN ใหม่</label><input type="password" id="confirmPin" placeholder="••••" maxlength="4" inputmode="numeric"></div>
+    <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal('changePinModal')">ยกเลิก</button><button class="btn btn-primary" onclick="changePin()">บันทึก</button></div>
   </div>
 </div>
-
-<!-- Confirm Delete Modal -->
 <div class="modal" id="confirmDeleteModal">
   <div class="modal-content" style="max-width:400px">
     <div class="modal-handle"></div>
     <h2 id="confirmDeleteTitle">🗑️ ยืนยันการลบ</h2>
     <p id="confirmDeleteText" style="color: var(--text-muted); margin: 0 0 16px; font-size: 14px;"></p>
-    <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="closeModal('confirmDeleteModal')">ยกเลิก</button>
-      <button class="btn btn-danger" onclick="confirmDeleteExecute()" style="background: var(--danger); color: white;">ลบเลย</button>
-    </div>
+    <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal('confirmDeleteModal')">ยกเลิก</button><button class="btn btn-danger" onclick="confirmDeleteExecute()" style="background: var(--danger); color: white;">ลบเลย</button></div>
   </div>
 </div>
-
 <div class="toast" id="toast"></div>
 
 <script>
-  const STORAGE_KEY = 'stock_counter_data_v3';
+  // ==========================================
+  // ⚠️ ใส่ค่า Supabase ของคุณที่นี่ ⚠️
+  // ==========================================
+  const SUPABASE_URL = 'https://stock-poom-83b3.vercel.app/';
+  const SUPABASE_ANON_KEY = 'sb_publishable_0z76hGnzRhBf2LZbGphTZQ_P9Pt6UU4';
+  
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
   const ADMIN_KEY = 'stock_counter_admin_v1';
   const DEFAULT_PIN = '1234';
 
@@ -623,18 +243,79 @@
   let selectedIds = new Set();
   let pendingDeleteAction = null;
 
-  // ============ Storage ============
-  function loadData() {
-    try { products = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
-    catch (e) { products = []; }
-    try { adminPin = localStorage.getItem(ADMIN_KEY) || DEFAULT_PIN; }
-    catch (e) { adminPin = DEFAULT_PIN; }
+  // ============ Database Operations (แทนที่ localStorage) ============
+  
+  // ดึงข้อมูลทั้งหมดจาก Supabase
+  async function fetchProducts() {
+    const { data, error } = await supabaseClient
+      .from('products')
+      .select('*')
+      .order('id', { ascending: true }); // เรียงตาม id ที่สร้างไว้
+
+    if (error) {
+      console.error('Error fetching:', error);
+      showToast('❌ ดึงข้อมูลไม่สำเร็จ');
+      return;
+    }
+    products = data || [];
+    render();
   }
-  function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(products)); }
-  function saveAdminPin(p) { adminPin = p; localStorage.setItem(ADMIN_KEY, p); }
+
+  // เพิ่มสินค้าใหม่
+  async function insertProduct(newProduct) {
+    const { data, error } = await supabaseClient
+      .from('products')
+      .insert([newProduct])
+      .select(); // เอาข้อมูลที่ insert สำเร็จกลับมาด้วย
+
+    if (error) { console.error(error); showToast('❌ เพิ่มสินค้าไม่สำเร็จ'); return false; }
+    
+    // อัปเดต array ในเครื่องให้ตรงกับฐานข้อมูล
+    products = [...products, ...data]; 
+    return true;
+  }
+
+  // อัปเดตสินค้า (ใช้ทั้งแก้ไขข้อมูล และ อัปเดตจำนวนนับ)
+  async function updateProduct(id, updates) {
+    const { error } = await supabaseClient
+      .from('products')
+      .update(updates)
+      .eq('id', id);
+
+    if (error) { console.error(error); showToast('❌ อัปเดตไม่สำเร็จ'); return false; }
+    
+    // อัปเดต array ในเครื่อง
+    const idx = products.findIndex(p => p.id === id);
+    if (idx !== -1) products[idx] = { ...products[idx], ...updates };
+    return true;
+  }
+
+  // ลบสินค้า
+  async function deleteProducts(ids) {
+    const { error } = await supabaseClient
+      .from('products')
+      .delete()
+      .in('id', ids);
+
+    if (error) { console.error(error); showToast('❌ ลบไม่สำเร็จ'); return false; }
+    
+    products = products.filter(p => !ids.includes(p.id));
+    return true;
+  }
+
+  // ลบทั้งหมด
+  async function deleteAllProducts() {
+    const { error } = await supabaseClient
+      .from('products')
+      .delete()
+      .neq('id', 0); // ลบทุกแถวที่มี id ไม่เท่ากับ 0 (คือลบทั้งหมด)
+
+    if (error) { console.error(error); showToast('❌ ลบไม่สำเร็จ'); return false; }
+    products = [];
+    return true;
+  }
 
   // ============ Utils ============
-  function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
   function showToast(msg) {
     const t = document.getElementById('toast');
     t.textContent = msg;
@@ -643,453 +324,22 @@
     t._timer = setTimeout(() => t.classList.remove('show'), 2200);
   }
   function escapeHtml(s) {
-    return String(s).replace(/[&<>"']/g, c => ({
-      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-    }[c]));
+    return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
   }
   function getDiff(p) {
     if (p.counted === null || p.counted === undefined || p.counted === '') return null;
     return p.counted - p.system;
   }
 
-  // ============ Admin ============
+  // ============ Admin (ใช้ localStorage เหมือนเดิม เพราะเป็นค่าของเครื่องนั้นๆ) ============
+  function loadAdminData() {
+    try { adminPin = localStorage.getItem(ADMIN_KEY) || DEFAULT_PIN; }
+    catch (e) { adminPin = DEFAULT_PIN; }
+  }
+  function saveAdminPin(p) { adminPin = p; localStorage.setItem(ADMIN_KEY, p); }
+
   function updateAdminUI() {
     const badge = document.getElementById('adminBadge');
     const text = document.getElementById('adminText');
     const icon = document.getElementById('adminIcon');
     const banner = document.getElementById('readonlyBanner');
-    const fab = document.getElementById('fabAdd');
-    const adminBtns = document.querySelectorAll('.admin-only');
-
-    if (isAdmin) {
-      badge.classList.add('unlocked');
-      text.textContent = 'แอดมิน';
-      icon.textContent = '🔒';
-      banner.style.display = 'none';
-      fab.classList.remove('hidden');
-      adminBtns.forEach(b => b.disabled = false);
-    } else {
-      badge.classList.remove('unlocked');
-      text.textContent = 'โหมดทั่วไป';
-      icon.textContent = '🔓';
-      banner.style.display = 'block';
-      fab.classList.add('hidden');
-      adminBtns.forEach(b => b.disabled = true);
-      // exit select mode if it was on
-      if (selectMode) exitSelectMode();
-    }
-  }
-
-  function handleAdminClick() {
-    if (isAdmin) {
-      if (confirm('ออกจากโหมดแอดมิน?')) {
-        isAdmin = false;
-        updateAdminUI();
-        render();
-        showToast('ออกจากโหมดแอดมินแล้ว');
-      }
-    } else {
-      openPinModal();
-    }
-  }
-
-  function openPinModal(callback) {
-    pinBuffer = '';
-    pinCallback = callback || null;
-    document.getElementById('pinTitle').textContent = callback ? '🔐 ยืนยันตัวตน' : '🔐 เข้าสู่โหมดแอดมิน';
-    document.getElementById('pinError').textContent = '';
-    renderPinDots();
-    document.getElementById('pinModal').classList.add('show');
-  }
-
-  function renderPinDots() {
-    document.querySelectorAll('#pinDisplay .pin-dot').forEach((d, i) => {
-      d.classList.toggle('filled', i < pinBuffer.length);
-    });
-  }
-
-  function pinInput(digit) {
-    if (pinBuffer.length >= 4) return;
-    pinBuffer += digit;
-    renderPinDots();
-    document.getElementById('pinError').textContent = '';
-    if (pinBuffer.length === 4) setTimeout(checkPin, 150);
-  }
-  function pinBackspace() {
-    pinBuffer = pinBuffer.slice(0, -1);
-    renderPinDots();
-    document.getElementById('pinError').textContent = '';
-  }
-  function checkPin() {
-    if (pinBuffer === adminPin) {
-      closeModal('pinModal');
-      if (pinCallback) {
-        const cb = pinCallback; pinCallback = null; cb();
-      } else {
-        isAdmin = true;
-        updateAdminUI();
-        render();
-        showToast('✅ เข้าสู่โหมดแอดมินแล้ว');
-      }
-      pinBuffer = '';
-    } else {
-      document.getElementById('pinError').textContent = '❌ PIN ไม่ถูกต้อง';
-      pinBuffer = '';
-      renderPinDots();
-      if (navigator.vibrate) navigator.vibrate(200);
-    }
-  }
-
-  function requireAdmin(action) {
-    if (isAdmin) action();
-    else openPinModal(action);
-  }
-
-  // ============ Render ============
-  function renderStats() {
-    document.getElementById('statTotal').textContent = products.length;
-    document.getElementById('statCounted').textContent = products.filter(p =>
-      p.counted !== null && p.counted !== '' && p.counted !== undefined
-    ).length;
-    document.getElementById('statDiff').textContent = products.filter(p => {
-      const d = getDiff(p);
-      return d !== null && d !== 0;
-    }).length;
-  }
-
-  function renderList() {
-    const container = document.getElementById('productList');
-    let list = products;
-
-    if (currentTab === 'pending') {
-      list = list.filter(p => p.counted === null || p.counted === '' || p.counted === undefined);
-    } else if (currentTab === 'done') {
-      list = list.filter(p => p.counted !== null && p.counted !== '' && p.counted !== undefined);
-    } else if (currentTab === 'diff') {
-      list = list.filter(p => {
-        const d = getDiff(p);
-        return d !== null && d !== 0;
-      });
-    }
-
-    if (searchTerm) {
-      const s = searchTerm.toLowerCase();
-      list = list.filter(p =>
-        (p.name || '').toLowerCase().includes(s) ||
-        (p.sku || '').toLowerCase().includes(s)
-      );
-    }
-
-    if (list.length === 0) {
-      container.innerHTML = `
-        <div class="empty-state">
-          <div class="icon">📦</div>
-          <div class="title">ไม่พบรายการสินค้า</div>
-          <div class="desc">${isAdmin ? 'กดปุ่ม + เพื่อเพิ่มสินค้า' : 'กรุณาให้แอดมินเพิ่มสินค้า'}</div>
-        </div>`;
-      return;
-    }
-
-    container.innerHTML = list.map(p => {
-      const diff = getDiff(p);
-      let cardClass = 'plain';
-      let diffHtml = '';
-      if (diff !== null) {
-        if (diff === 0) { cardClass = 'ok'; diffHtml = `<span class="diff-badge ok">✓ ตรง</span>`; }
-        else if (diff < 0) { cardClass = 'short'; diffHtml = `<span class="diff-badge short">ขาด ${Math.abs(diff)}</span>`; }
-        else { cardClass = 'over'; diffHtml = `<span class="diff-badge over">เกิน ${diff}</span>`; }
-      }
-      const isSelected = selectedIds.has(p.id);
-      return `
-        <div class="product-card ${cardClass} ${isSelected ? 'selected' : ''}"
-             data-id="${p.id}" onclick="handleCardClick(event, '${p.id}')">
-          <div class="checkbox"></div>
-          ${isAdmin ? `<button class="delete-btn" onclick="event.stopPropagation(); deleteSingle('${p.id}')">✕</button>` : ''}
-          <div class="product-name">${escapeHtml(p.name)}</div>
-          ${p.sku ? `<div class="product-sku">${escapeHtml(p.sku)}</div>` : ''}
-          <div class="product-info">
-            ในระบบ <strong>${p.system}</strong> ${diffHtml}
-          </div>
-          <div class="product-row">
-            <div class="count-controls">
-              <button onclick="event.stopPropagation(); changeCount('${p.id}', -1)">−</button>
-              <input type="number"
-                value="${p.counted === null || p.counted === undefined || p.counted === '' ? '' : p.counted}"
-                placeholder="นับ"
-                onclick="event.stopPropagation()"
-                onchange="setCount('${p.id}', this.value)"
-                onfocus="this.select()">
-              <button onclick="event.stopPropagation(); changeCount('${p.id}', 1)">+</button>
-            </div>
-            ${isAdmin ? `<button class="edit-btn" onclick="event.stopPropagation(); openEditModal('${p.id}')">แก้ไข</button>` : ''}
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    updateSelectionBar();
-  }
-
-  function render() { renderStats(); renderList(); }
-
-  // ============ Selection Mode ============
-  function toggleSelectMode() {
-    if (selectMode) exitSelectMode();
-    else enterSelectMode();
-  }
-
-  function enterSelectMode() {
-    if (!isAdmin) { requireAdmin(() => enterSelectMode()); return; }
-    selectMode = true;
-    selectedIds.clear();
-    document.body.classList.add('select-mode');
-    document.getElementById('selectionBar').classList.add('show');
-    document.getElementById('selectModeBtn').textContent = '✖ ยกเลิกเลือก';
-    document.getElementById('fabAdd').classList.add('hidden');
-    renderList();
-  }
-
-  function exitSelectMode() {
-    selectMode = false;
-    selectedIds.clear();
-    document.body.classList.remove('select-mode');
-    document.getElementById('selectionBar').classList.remove('show');
-    document.getElementById('selectModeBtn').textContent = '☑️ เลือกลบ';
-    if (isAdmin) document.getElementById('fabAdd').classList.remove('hidden');
-    renderList();
-  }
-
-  function handleCardClick(event, id) {
-    if (!selectMode) return;
-    event.preventDefault();
-    if (selectedIds.has(id)) selectedIds.delete(id);
-    else selectedIds.add(id);
-    renderList();
-  }
-
-  function updateSelectionBar() {
-    const n = selectedIds.size;
-    document.getElementById('selectedCount').textContent = n;
-    document.getElementById('deleteSelectedBtn').disabled = n === 0;
-  }
-
-  function deleteSelected() {
-    if (selectedIds.size === 0) return;
-    const n = selectedIds.size;
-    pendingDeleteAction = () => {
-      products = products.filter(p => !selectedIds.has(p.id));
-      saveData();
-      exitSelectMode();
-      render();
-      showToast(`🗑️ ลบ ${n} รายการแล้ว`);
-    };
-    showConfirmDelete(
-      '🗑️ ลบสินค้าที่เลือก',
-      `ต้องการลบสินค้า ${n} รายการที่เลือกหรือไม่? (ไม่สามารถกู้คืนได้)`
-    );
-  }
-
-  function deleteSingle(id) {
-    const p = products.find(x => x.id === id);
-    if (!p) return;
-    pendingDeleteAction = () => {
-      products = products.filter(x => x.id !== id);
-      saveData();
-      render();
-      showToast('🗑️ ลบสินค้าแล้ว');
-    };
-    showConfirmDelete('🗑️ ลบสินค้า', `ต้องการลบ "${p.name}" หรือไม่?`);
-  }
-
-  function showConfirmDelete(title, text) {
-    document.getElementById('confirmDeleteTitle').textContent = title;
-    document.getElementById('confirmDeleteText').textContent = text;
-    document.getElementById('confirmDeleteModal').classList.add('show');
-  }
-
-  function confirmDeleteExecute() {
-    closeModal('confirmDeleteModal');
-    if (pendingDeleteAction) {
-      const fn = pendingDeleteAction;
-      pendingDeleteAction = null;
-      fn();
-    }
-  }
-
-  // ============ Actions: count (ทุกคนทำได้) ============
-  function changeCount(id, delta) {
-    const p = products.find(x => x.id === id);
-    if (!p) return;
-    let cur = (p.counted === null || p.counted === undefined || p.counted === '') ? 0 : parseInt(p.counted);
-    cur = Math.max(0, cur + delta);
-    p.counted = cur;
-    saveData();
-    render();
-  }
-
-  function setCount(id, val) {
-    const p = products.find(x => x.id === id);
-    if (!p) return;
-    if (val === '' || val === null) p.counted = null;
-    else {
-      const n = parseInt(val);
-      p.counted = isNaN(n) ? null : Math.max(0, n);
-    }
-    saveData();
-    render();
-  }
-
-  // ============ Actions: admin only ============
-  function openAddModal() {
-    requireAdmin(() => {
-      editingId = null;
-      document.getElementById('modalTitle').textContent = 'เพิ่มสินค้า';
-      document.getElementById('inputName').value = '';
-      document.getElementById('inputSku').value = '';
-      document.getElementById('inputSystem').value = '';
-      document.getElementById('productModal').classList.add('show');
-      setTimeout(() => document.getElementById('inputName').focus(), 200);
-    });
-  }
-
-  function openEditModal(id) {
-    requireAdmin(() => {
-      const p = products.find(x => x.id === id);
-      if (!p) return;
-      editingId = id;
-      document.getElementById('modalTitle').textContent = 'แก้ไขสินค้า';
-      document.getElementById('inputName').value = p.name;
-      document.getElementById('inputSku').value = p.sku || '';
-      document.getElementById('inputSystem').value = p.system;
-      document.getElementById('productModal').classList.add('show');
-    });
-  }
-
-  function saveProduct() {
-    const name = document.getElementById('inputName').value.trim();
-    const sku = document.getElementById('inputSku').value.trim();
-    const system = parseInt(document.getElementById('inputSystem').value) || 0;
-    if (!name) { alert('กรุณากรอกชื่อสินค้า'); return; }
-
-    if (editingId) {
-      const p = products.find(x => x.id === editingId);
-      if (p) { p.name = name; p.sku = sku; p.system = system; }
-      showToast('✅ แก้ไขสินค้าแล้ว');
-    } else {
-      products.push({ id: genId(), name, sku, system, counted: null });
-      showToast('✅ เพิ่มสินค้าแล้ว');
-    }
-    saveData();
-    closeModal('productModal');
-    render();
-  }
-
-  function resetCount() {
-    requireAdmin(() => {
-      if (!confirm('ต้องการรีเซ็ตตัวเลขที่นับได้ทั้งหมดหรือไม่?')) return;
-      products.forEach(p => p.counted = null);
-      saveData();
-      render();
-      showToast('🔄 รีเซ็ตการนับแล้ว');
-    });
-  }
-
-  function clearAll() {
-    requireAdmin(() => {
-      if (products.length === 0) { showToast('ไม่มีข้อมูลให้ลบ'); return; }
-      pendingDeleteAction = () => {
-        products = [];
-        saveData();
-        render();
-        showToast('🗑️ ลบข้อมูลทั้งหมดแล้ว');
-      };
-      showConfirmDelete('🗑️ ลบทั้งหมด', 'ต้องการลบสินค้าทั้งหมดหรือไม่? (ไม่สามารถกู้คืนได้)');
-    });
-  }
-
-  function openChangePinModal() {
-    requireAdmin(() => {
-      document.getElementById('oldPin').value = '';
-      document.getElementById('newPin').value = '';
-      document.getElementById('confirmPin').value = '';
-      document.getElementById('changePinModal').classList.add('show');
-    });
-  }
-
-  function changePin() {
-    const oldP = document.getElementById('oldPin').value.trim();
-    const newP = document.getElementById('newPin').value.trim();
-    const confP = document.getElementById('confirmPin').value.trim();
-    if (oldP !== adminPin) { alert('PIN เดิมไม่ถูกต้อง'); return; }
-    if (!/^\d{4}$/.test(newP)) { alert('PIN ใหม่ต้องเป็นตัวเลข 4 หลัก'); return; }
-    if (newP !== confP) { alert('PIN ใหม่และยืนยันไม่ตรงกัน'); return; }
-    saveAdminPin(newP);
-    closeModal('changePinModal');
-    showToast('✅ เปลี่ยน PIN แล้ว');
-  }
-
-  // ============ Export ============
-  function exportCSV() {
-    if (products.length === 0) { alert('ไม่มีข้อมูลให้ส่งออก'); return; }
-    const rows = [['ชื่อสินค้า','SKU','ในระบบ','นับได้','ผลต่าง','สถานะ']];
-    products.forEach(p => {
-      const d = getDiff(p);
-      let status = 'ยังไม่นับ';
-      if (d === 0) status = 'ตรง';
-      else if (d !== null && d < 0) status = 'ขาด ' + Math.abs(d);
-      else if (d !== null && d > 0) status = 'เกิน ' + d;
-      rows.push([
-        p.name, p.sku || '', p.system,
-        (p.counted === null || p.counted === '') ? '' : p.counted,
-        d === null ? '' : d, status
-      ]);
-    });
-    const csv = '\uFEFF' + rows.map(r =>
-      r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')
-    ).join('\r\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `stock_${new Date().toISOString().slice(0,10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    showToast('📥 ส่งออก CSV แล้ว');
-  }
-
-  // ============ Modal helpers ============
-  function closeModal(id) { document.getElementById(id).classList.remove('show'); }
-  document.querySelectorAll('.modal').forEach(m => {
-    m.addEventListener('click', e => { if (e.target === m) closeModal(m.id); });
-  });
-
-  // ============ Events ============
-  document.querySelectorAll('.tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      currentTab = tab.dataset.tab;
-      renderList();
-    });
-  });
-
-  document.getElementById('searchInput').addEventListener('input', e => {
-    searchTerm = e.target.value;
-    renderList();
-  });
-
-  document.addEventListener('keydown', e => {
-    if (!document.getElementById('pinModal').classList.contains('show')) return;
-    if (/^\d$/.test(e.key)) pinInput(e.key);
-    else if (e.key === 'Backspace') pinBackspace();
-    else if (e.key === 'Escape') closeModal('pinModal');
-  });
-
-  // ============ Init ============
-  loadData();
-  updateAdminUI();
-  render();
-</script>
-
-</body>
-</html>

@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#4f46e5">
-<title>ระบบนับสต๊อก (Excel)</title>
+<title>ระบบนับสต๊อก (Excel Auto-Save)</title>
 
 <!-- โหลดไลบรารี SheetJS สำหรับจัดการ Excel -->
 <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
@@ -33,6 +33,9 @@
   .stat-box { background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; padding: 10px 8px; text-align: center; }
   .stat-box .num { font-size: 22px; font-weight: 800; color: white; line-height: 1.1; }
   .stat-box .label { font-size: 11px; color: rgba(255,255,255,0.85); margin-top: 2px; }
+  .file-bar { padding: 10px 16px; background: #f1f5f9; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; }
+  .file-name { font-weight: 600; color: var(--primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px; }
+  .file-bar button { padding: 6px 12px; font-size: 12px; border-radius: 8px; }
   .search-bar { padding: 14px 16px 8px; background: var(--bg); position: sticky; top: 0; z-index: 9; }
   .search-wrapper { position: relative; }
   .search-wrapper .icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 16px; pointer-events: none; }
@@ -90,9 +93,13 @@
   .btn-danger { background: var(--danger-light); color: var(--danger); }
   .btn-danger:active { background: #fecaca; }
   .btn-success { background: var(--success); color: white; box-shadow: 0 4px 12px rgba(16,185,129,0.3); }
-  .fab { position: fixed; bottom: 24px; right: 20px; width: 58px; height: 58px; border-radius: 50%; background: var(--primary); color: white; border: none; font-size: 30px; font-weight: 300; box-shadow: 0 8px 24px rgba(79,70,229,0.4); cursor: pointer; z-index: 20; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+  .fab { position: fixed; bottom: 80px; right: 20px; width: 58px; height: 58px; border-radius: 50%; background: var(--primary); color: white; border: none; font-size: 30px; font-weight: 300; box-shadow: 0 8px 24px rgba(79,70,229,0.4); cursor: pointer; z-index: 20; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
   .fab:active { background: var(--primary-dark); transform: scale(0.92); }
   .fab.hidden { display: none; }
+  .save-bar { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); box-shadow: 0 -4px 20px rgba(15,23,42,0.1); border-radius: 20px 20px 0 0; z-index: 25; display: flex; gap: 10px; align-items: center; }
+  .save-bar .status { flex: 1; font-size: 12px; color: var(--text-muted); }
+  .save-bar .status strong { color: var(--success); }
+  .save-bar .btn { flex-shrink: 0; }
   .selection-bar { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 12px 16px 20px; box-shadow: 0 -4px 20px rgba(15,23,42,0.1); border-radius: 20px 20px 0 0; z-index: 30; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; gap: 10px; align-items: center; }
   .selection-bar.show { transform: translateY(0); }
   .selection-bar .count { font-size: 14px; font-weight: 600; color: var(--text); flex-shrink: 0; }
@@ -131,7 +138,8 @@
   @media (min-width: 640px) {
     body { max-width: 640px; margin: 0 auto; }
     .modal-content { border-radius: 20px; margin-bottom: 20px; }
-    .selection-bar { max-width: 640px; margin: 0 auto; left: 50%; transform: translateX(-50%) translateY(100%); }
+    .save-bar, .selection-bar { max-width: 640px; margin: 0 auto; left: 50%; transform: translateX(-50%); }
+    .selection-bar { transform: translateX(-50%) translateY(100%); }
     .selection-bar.show { transform: translateX(-50%) translateY(0); }
   }
 </style>
@@ -153,6 +161,12 @@
   </div>
 </header>
 
+<!-- แถบแสดงชื่อไฟล์ที่เชื่อมต่ออยู่ -->
+<div class="file-bar" id="fileBar">
+  <div class="file-name" id="fileName">📄 ยังไม่ได้เชื่อมต่อไฟล์ Excel</div>
+  <button class="btn btn-primary" onclick="openExcelFile()" id="openFileBtn">📂 เปิดไฟล์</button>
+</div>
+
 <div id="readonlyBanner" class="readonly-banner" style="display:none;">👤 โหมดทั่วไป — นับสต๊อกได้ แต่ไม่สามารถเพิ่ม/แก้ไข/ลบสินค้าได้</div>
 
 <div class="search-bar"><div class="search-wrapper"><span class="icon">🔍</span><input type="text" id="searchInput" placeholder="ค้นหาชื่อสินค้า หรือ SKU..."></div></div>
@@ -165,11 +179,6 @@
 </div>
 
 <div class="actions-bar">
-  <!-- ปุ่มนำเข้า Excel (ซ่อน input ไว้) -->
-  <input type="file" id="excelInput" accept=".xlsx, .xls" style="display:none" onchange="handleExcelUpload(event)">
-  <button class="btn btn-secondary" onclick="document.getElementById('excelInput').click()">📤 นำเข้า Excel</button>
-  
-  <button class="btn btn-secondary" onclick="exportExcel()">📥 ส่งออก Excel</button>
   <button class="btn btn-secondary admin-only" onclick="toggleSelectMode()" disabled id="selectModeBtn">☑️ เลือกลบ</button>
   <button class="btn btn-secondary admin-only" onclick="resetCount()" disabled>🔄 รีเซ็ต</button>
   <button class="btn btn-danger admin-only" onclick="clearAll()" disabled>🗑️ ลบทั้งหมด</button>
@@ -178,6 +187,12 @@
 
 <div class="product-list" id="productList"></div>
 <button class="fab hidden" id="fabAdd" onclick="openAddModal()">+</button>
+
+<!-- แถบบันทึกด้านล่าง -->
+<div class="save-bar" id="saveBar" style="display:none;">
+  <div class="status" id="saveStatus">พร้อมบันทึก</div>
+  <button class="btn btn-success" onclick="saveToFile()" id="saveBtn">💾 บันทึกทับไฟล์เดิม</button>
+</div>
 
 <div class="selection-bar" id="selectionBar">
   <div class="count">เลือกแล้ว <strong id="selectedCount">0</strong> รายการ</div>
@@ -236,9 +251,9 @@
 
 <script>
   // ==========================================
-  // ตั้งค่าฐานข้อมูล (ใช้ LocalStorage เป็น Cache)
+  // ตั้งค่า
   // ==========================================
-  const STORAGE_KEY = 'stock_counter_data_v3';
+  const STORAGE_KEY = 'stock_counter_data_v4';
   const ADMIN_KEY = 'stock_counter_admin_v1';
   const DEFAULT_PIN = '1234';
 
@@ -254,90 +269,255 @@
   let selectedIds = new Set();
   let pendingDeleteAction = null;
 
-  // ============ Storage: Local + Excel ============
+  // ตัวแปรสำหรับจัดการไฟล์ Excel (File System Access API)
+  let fileHandle = null;       // เก็บ Reference ของไฟล์
+  let fileName = '';           // ชื่อไฟล์
+  let fileHasPermission = false;
+
+  // ============ Storage: Local Cache ============
   function loadData() {
     try { products = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch (e) { products = []; }
     try { adminPin = localStorage.getItem(ADMIN_KEY) || DEFAULT_PIN; } catch (e) { adminPin = DEFAULT_PIN; }
     
-    updateAdminUI();
-    render();
+    // ลองกู้คืน File Handle จาก IndexedDB (ถ้าเคยเชื่อมไว้)
+    restoreFileHandle().then(() => {
+      updateAdminUI();
+      render();
+    });
   }
 
-  function saveData() {
+  function saveDataToCache() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
   }
 
-  // ============ Excel Import / Export ============
-  function handleExcelUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      try {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-        
-        // อ่านข้อมูลจาก Excel
-        const jsonData = XLSX.utils.sheet_to_json(firstSheet);
-        
-        if (jsonData.length === 0) {
-          alert('ไม่พบข้อมูลในไฟล์ Excel');
-          return;
-        }
-
-        // แปลงข้อมูลให้ตรงกับระบบ (รองรับทั้งหัวตารางภาษาไทยและอังกฤษ)
-        products = jsonData.map((row) => ({
-          id: row.ID || row.id || genId(),
-          name: row['ชื่อสินค้า'] || row.name || row.Name || 'ไม่มีชื่อ',
-          sku: row['SKU'] || row.sku || row.Sku || '',
-          system: parseInt(row['ในระบบ'] || row.system || row.System || 0) || 0,
-          counted: (row['นับได้'] !== undefined && row['นับได้'] !== '') ? parseInt(row['นับได้']) : null
-        }));
-
-        saveData();
-        render();
-        showToast(`📥 นำเข้าข้อมูล ${products.length} รายการสำเร็จ`);
-      } catch (err) {
-        console.error(err);
-        alert('เกิดข้อผิดพลาดในการอ่านไฟล์ Excel กรุณาตรวจสอบรูปแบบไฟล์');
-      } finally {
-        event.target.value = ''; // เคลียร์ค่าเพื่อให้เลือกไฟล์เดิมซ้ำได้
-      }
-    };
-    reader.readAsArrayBuffer(file);
+  // ============ File System Access API ============
+  
+  // ตรวจสอบว่าเบราว์เซอร์รองรับหรือไม่
+  function isFileSystemSupported() {
+    return 'showOpenFilePicker' in window;
   }
 
-  function exportExcel() {
-    if (products.length === 0) { alert('ไม่มีข้อมูลให้ส่งออก'); return; }
+  // เปิดไฟล์ Excel
+  async function openExcelFile() {
+    if (!isFileSystemSupported()) {
+      alert('⚠️ เบราว์เซอร์ของคุณไม่รองรับการบันทึกทับไฟล์โดยตรง\nกรุณาใช้ Chrome หรือ Edge เวอร์ชันใหม่\n\n(ระบบจะใช้โหมดสำรอง: ดาวน์โหลดไฟล์ใหม่แทน)');
+      // โหมดสำรอง: ใช้ input file แบบเก่า
+      fallbackImportFile();
+      return;
+    }
 
-    // เตรียมข้อมูลสำหรับ Export
-    const exportData = products.map(p => {
-      const d = getDiff(p);
-      let status = 'ยังไม่นับ';
-      if (d === 0) status = 'ตรง';
-      else if (d !== null && d < 0) status = 'ขาด ' + Math.abs(d);
-      else if (d !== null && d > 0) status = 'เกิน ' + d;
+    try {
+      // ให้ผู้ใช้เลือกไฟล์
+      const [handle] = await window.showOpenFilePicker({
+        types: [{
+          description: 'Excel Files',
+          accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'], 'application/vnd.ms-excel': ['.xls'] }
+        }],
+        multiple: false
+      });
 
-      return {
-        'ID': p.id,
-        'ชื่อสินค้า': p.name,
-        'SKU': p.sku || '',
-        'ในระบบ': p.system,
-        'นับได้': (p.counted === null || p.counted === '') ? '' : p.counted,
-        'ผลต่าง': d === null ? '' : d,
-        'สถานะ': status,
-        'วันที่อัปเดต': new Date().toLocaleString('th-TH')
+      fileHandle = handle;
+      fileName = handle.name;
+      fileHasPermission = true;
+
+      // อ่านไฟล์
+      const file = await handle.getFile();
+      await parseExcelFile(file);
+
+      // บันทึก handle ลง IndexedDB เพื่อให้จำได้ในครั้งถัดไป
+      await saveFileHandleToDB(handle);
+
+      updateFileBar();
+      showToast(`📂 เชื่อมต่อไฟล์ ${fileName} แล้ว`);
+    } catch (err) {
+      if (err.name === 'AbortError') return; // ผู้ใช้กดยกเลิก
+      console.error(err);
+      alert('ไม่สามารถเปิดไฟล์ได้: ' + err.message);
+    }
+  }
+
+  // อ่านและแปลงข้อมูลจาก Excel
+  async function parseExcelFile(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+
+          if (jsonData.length === 0) {
+            alert('ไม่พบข้อมูลในไฟล์ Excel');
+            reject(new Error('No data'));
+            return;
+          }
+
+          products = jsonData.map((row) => ({
+            id: row.ID || row.id || genId(),
+            name: row['ชื่อสินค้า'] || row.name || row.Name || 'ไม่มีชื่อ',
+            sku: row['SKU'] || row.sku || row.Sku || '',
+            system: parseInt(row['ในระบบ'] || row.system || row.System || 0) || 0,
+            counted: (row['นับได้'] !== undefined && row['นับได้'] !== '') ? parseInt(row['นับได้']) : null
+          }));
+
+          saveDataToCache();
+          render();
+          updateSaveBar();
+          resolve();
+        } catch (err) {
+          reject(err);
+        }
       };
+      reader.onerror = reject;
+      reader.readAsArrayBuffer(file);
     });
+  }
 
-    const ws = XLSX.utils.json_to_sheet(exportData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Stock");
-    
-    XLSX.writeFile(wb, `stock_${new Date().toISOString().slice(0,10)}.xlsx`);
-    showToast('📥 ส่งออก Excel แล้ว');
+  // บันทึกทับไฟล์เดิม
+  async function saveToFile() {
+    if (!fileHandle) {
+      alert('กรุณาเปิดไฟล์ Excel ก่อนบันทึก');
+      return;
+    }
+
+    try {
+      // ขอ Permission (ครั้งแรกจะถาม, ครั้งต่อไปจะผ่านเลย)
+      const permission = await fileHandle.queryPermission({ mode: 'readwrite' });
+      if (permission !== 'granted') {
+        const request = await fileHandle.requestPermission({ mode: 'readwrite' });
+        if (request !== 'granted') {
+          alert('ไม่ได้รับอนุญาตให้บันทึกไฟล์');
+          return;
+        }
+      }
+
+      // เตรียมข้อมูลสำหรับ Excel
+      const exportData = products.map(p => {
+        const d = getDiff(p);
+        let status = 'ยังไม่นับ';
+        if (d === 0) status = 'ตรง';
+        else if (d !== null && d < 0) status = 'ขาด ' + Math.abs(d);
+        else if (d !== null && d > 0) status = 'เกิน ' + d;
+
+        return {
+          'ID': p.id,
+          'ชื่อสินค้า': p.name,
+          'SKU': p.sku || '',
+          'ในระบบ': p.system,
+          'นับได้': (p.counted === null || p.counted === '') ? '' : p.counted,
+          'ผลต่าง': d === null ? '' : d,
+          'สถานะ': status,
+          'วันที่อัปเดต': new Date().toLocaleString('th-TH')
+        };
+      });
+
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Stock");
+
+      // เขียนไฟล์กลับ
+      const writable = await fileHandle.createWritable();
+      const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      await writable.write(wbout);
+      await writable.close();
+
+      updateSaveStatus('✅ บันทึกสำเร็จ ' + new Date().toLocaleTimeString('th-TH'));
+      showToast('💾 บันทึกทับไฟล์เดิมเรียบร้อย');
+    } catch (err) {
+      console.error(err);
+      alert('ไม่สามารถบันทึกไฟล์ได้: ' + err.message);
+    }
+  }
+
+  // อัปเดตแถบสถานะไฟล์
+  function updateFileBar() {
+    const fileNameEl = document.getElementById('fileName');
+    const openBtn = document.getElementById('openFileBtn');
+    const saveBar = document.getElementById('saveBar');
+
+    if (fileHandle) {
+      fileNameEl.textContent = '📄 ' + fileName;
+      openBtn.textContent = '🔄 เปลี่ยนไฟล์';
+      saveBar.style.display = 'flex';
+      updateSaveBar();
+    } else {
+      fileNameEl.textContent = '📄 ยังไม่ได้เชื่อมต่อไฟล์ Excel';
+      openBtn.textContent = '📂 เปิดไฟล์';
+      saveBar.style.display = 'none';
+    }
+  }
+
+  function updateSaveBar() {
+    const status = document.getElementById('saveStatus');
+    if (products.length === 0) {
+      status.textContent = 'ไม่มีข้อมูล';
+    } else {
+      const counted = products.filter(p => p.counted !== null && p.counted !== '' && p.counted !== undefined).length;
+      status.innerHTML = `นับแล้ว <strong>${counted}</strong> / ${products.length} รายการ`;
+    }
+  }
+
+  function updateSaveStatus(msg) {
+    document.getElementById('saveStatus').textContent = msg;
+  }
+
+  // ============ IndexedDB: เก็บ File Handle ============
+  function openDB() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open('StockCounterDB', 1);
+      req.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains('files')) {
+          db.createObjectStore('files');
+        }
+      };
+      req.onsuccess = (e) => resolve(e.target.result);
+      req.onerror = (e) => reject(e.target.error);
+    });
+  }
+
+  async function saveFileHandleToDB(handle) {
+    try {
+      const db = await openDB();
+      const tx = db.transaction('files', 'readwrite');
+      tx.objectStore('files').put(handle, 'excelFile');
+    } catch (e) { console.error('Save handle error:', e); }
+  }
+
+  async function restoreFileHandle() {
+    try {
+      const db = await openDB();
+      const tx = db.transaction('files', 'readonly');
+      const req = tx.objectStore('files').get('excelFile');
+      req.onsuccess = async () => {
+        if (req.result) {
+          fileHandle = req.result;
+          fileName = fileHandle.name;
+          // ตรวจสอบสิทธิ์
+          const perm = await fileHandle.queryPermission({ mode: 'readwrite' });
+          fileHasPermission = perm === 'granted';
+          updateFileBar();
+        }
+      };
+    } catch (e) { console.error('Restore handle error:', e); }
+  }
+
+  // ============ โหมดสำรอง (สำหรับเบราว์เซอร์เก่า) ============
+  function fallbackImportFile() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.xlsx,.xls';
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      fileName = file.name;
+      parseExcelFile(file).then(() => {
+        updateFileBar();
+        showToast('📥 นำเข้าข้อมูลแล้ว (โหมดสำรอง: ต้องดาวน์โหลดไฟล์ใหม่เพื่อบันทึก)');
+      });
+    };
+    input.click();
   }
 
   // ============ Utils ============
@@ -347,7 +527,7 @@
     t.textContent = msg;
     t.classList.add('show');
     clearTimeout(t._timer);
-    t._timer = setTimeout(() => t.classList.remove('show'), 2200);
+    t._timer = setTimeout(() => t.classList.remove('show'), 2500);
   }
   function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
@@ -491,7 +671,7 @@
         <div class="empty-state">
           <div class="icon">📦</div>
           <div class="title">ไม่พบรายการสินค้า</div>
-          <div class="desc">${isAdmin ? 'กดปุ่ม + เพื่อเพิ่มสินค้า หรือนำเข้า Excel' : 'กรุณาให้แอดมินเพิ่มสินค้า'}</div>
+          <div class="desc">${isAdmin ? 'กดปุ่ม + เพื่อเพิ่มสินค้า หรือเปิดไฟล์ Excel' : 'กรุณาให้แอดมินเพิ่มสินค้า'}</div>
         </div>`;
       return;
     }
@@ -536,7 +716,7 @@
     updateSelectionBar();
   }
 
-  function render() { renderStats(); renderList(); }
+  function render() { renderStats(); renderList(); updateSaveBar(); }
 
   // ============ Selection Mode ============
   function toggleSelectMode() {
@@ -584,7 +764,7 @@
     const n = selectedIds.size;
     pendingDeleteAction = () => {
       products = products.filter(p => !selectedIds.has(p.id));
-      saveData();
+      saveDataToCache();
       exitSelectMode();
       render();
       showToast(`🗑️ ลบ ${n} รายการแล้ว`);
@@ -597,7 +777,7 @@
     if (!p) return;
     pendingDeleteAction = () => {
       products = products.filter(x => x.id !== id);
-      saveData();
+      saveDataToCache();
       render();
       showToast('🗑️ ลบสินค้าแล้ว');
     };
@@ -626,7 +806,7 @@
     let cur = (p.counted === null || p.counted === undefined || p.counted === '') ? 0 : parseInt(p.counted);
     cur = Math.max(0, cur + delta);
     p.counted = cur;
-    saveData();
+    saveDataToCache();
     render();
   }
 
@@ -638,7 +818,7 @@
       const n = parseInt(val);
       p.counted = isNaN(n) ? null : Math.max(0, n);
     }
-    saveData();
+    saveDataToCache();
     render();
   }
 
@@ -682,7 +862,7 @@
       products.push({ id: genId(), name, sku, system, counted: null });
       showToast('✅ เพิ่มสินค้าแล้ว');
     }
-    saveData();
+    saveDataToCache();
     closeModal('productModal');
     render();
   }
@@ -691,7 +871,7 @@
     requireAdmin(() => {
       if (!confirm('ต้องการรีเซ็ตตัวเลขที่นับได้ทั้งหมดหรือไม่?')) return;
       products.forEach(p => p.counted = null);
-      saveData();
+      saveDataToCache();
       render();
       showToast('🔄 รีเซ็ตการนับแล้ว');
     });
@@ -702,7 +882,7 @@
       if (products.length === 0) { showToast('ไม่มีข้อมูลให้ลบ'); return; }
       pendingDeleteAction = () => {
         products = [];
-        saveData();
+        saveDataToCache();
         render();
         showToast('🗑️ ลบข้อมูลทั้งหมดแล้ว');
       };

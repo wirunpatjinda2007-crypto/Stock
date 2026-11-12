@@ -1,18 +1,20 @@
 /* ============================================
    StockFlow — Configuration
+   ค่าคงที่ทั้งหมดของระบบ อยู่ที่นี่ที่เดียว
    ============================================ */
 
 const CONFIG = {
+  // Storage Keys (ใช้ใน localStorage & IndexedDB)
   STORAGE_KEY: 'stockflow_data_v5',
   ADMIN_KEY: 'stockflow_admin_v1',
-  HISTORY_KEY: 'stockflow_history_v1',
-  LOG_KEY: 'stockflow_log_v1',
   DB_NAME: 'StockFlowDB',
   AUDIT_KEY: 'stockflow_audit_log_v1',
 
+  // ค่าเริ่มต้น
   DEFAULT_PIN: '1234',
   PIN_LENGTH: 4,
 
+  // ชื่อคอลัมน์ใน Excel (ถ้าเปลี่ยนต้องอัปเดตทั้ง import & export)
   EXCEL_COLUMNS: {
     ID: 'ID',
     NAME: 'ชื่อสินค้า',
@@ -24,13 +26,6 @@ const CONFIG = {
     UPDATED_AT: 'วันที่อัปเดต'
   },
 
-  SHEET_NAME: 'Stock',
-
-  // Supabase
-  SUPABASE_URL: 'https://jjifrsqvftsorwyupowt.supabase.co',
-  SUPABASE_KEY: 'sb_publishable_Z9Xpb1A5KwO89l6Z8CosSw_RjSc1MHv',
-  SYNC_INTERVAL_MS: 5000
+  // ชื่อ Sheet ในไฟล์ Excel
+  SHEET_NAME: 'Stock'
 };
-
-// กันไม่ให้ตัวแปรหายเมื่อโหลดซ้ำ
-window.CONFIG = CONFIG;

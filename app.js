@@ -4,7 +4,7 @@
 
 // ============ State ============
 let products = [];
-let adminPin = (typeof CONFIG !== 'undefined' && CONFIG.DEFAULT_PIN) ? CONFIG.DEFAULT_PIN : '1234';
+let adminPin = CONFIG.DEFAULT_PIN;
 let isAdmin = false;
 let editingId = null;
 let currentTab = 'all';
@@ -20,37 +20,22 @@ let fileHandle = null;
 let fileName = '';
 let fileHasPermission = false;
 
-const CAT_COL = (typeof CONFIG !== 'undefined' && CONFIG.EXCEL_COLUMNS && CONFIG.EXCEL_COLUMNS.CATEGORY) || 'หมวดหมู่';
+// Excel column name for category (falls back to Thai header 'หมวดหมู่')
+const CAT_COL = (CONFIG.EXCEL_COLUMNS && CONFIG.EXCEL_COLUMNS.CATEGORY) || 'หมวดหมู่';
 const DEFAULT_CATEGORY = 'ไม่ระบุ';
 
 // ============ Storage ============
 function loadData() {
-  try {
-    products = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEY) || '[]');
-  } catch (e) { products = []; }
-
-  try {
-    adminPin = localStorage.getItem(CONFIG.ADMIN_KEY) || CONFIG.DEFAULT_PIN;
-  } catch (e) { adminPin = CONFIG.DEFAULT_PIN; }
-
+  try { products = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEY) || '[]'); } catch (e) { products = []; }
+  try { adminPin = localStorage.getItem(CONFIG.ADMIN_KEY) || CONFIG.DEFAULT_PIN; } catch (e) { adminPin = CONFIG.DEFAULT_PIN; }
   restoreFileHandle().then(() => {
-    updateAdminUI();
-    render();
-  }).catch(() => {
     updateAdminUI();
     render();
   });
 }
 
 function saveDataToCache() {
-  try {
-    localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(products));
-  } catch (e) { console.error('localStorage save failed', e); }
-
-  // sync to cloud ถ้า jap.js โหลดแล้ว
-  if (typeof window.pushToCloud === 'function') {
-    window.pushToCloud();
-  }
+  localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(products));
 }
 
 // ============ File System Access API ============
@@ -200,7 +185,6 @@ function updateFileBar() {
   const fileIcon = document.getElementById('fileIcon');
   const openBtn = document.getElementById('openFileBtn');
   const saveBar = document.getElementById('saveBar');
-  if (!fileNameEl || !fileSub || !fileIcon || !openBtn || !saveBar) return;
 
   if (fileHandle) {
     fileNameEl.textContent = fileName;
@@ -224,7 +208,6 @@ function updateFileBar() {
 
 function updateSaveBar() {
   const status = document.getElementById('saveStatus');
-  if (!status) return;
   status.classList.remove('success');
   if (products.length === 0) {
     status.textContent = 'ไม่มีข้อมูล';
@@ -264,10 +247,8 @@ async function restoreFileHandle() {
       if (req.result) {
         fileHandle = req.result;
         fileName = fileHandle.name;
-        try {
-          const perm = await fileHandle.queryPermission({ mode: 'readwrite' });
-          fileHasPermission = perm === 'granted';
-        } catch (e) { fileHasPermission = false; }
+        const perm = await fileHandle.queryPermission({ mode: 'readwrite' });
+        fileHasPermission = perm === 'granted';
         updateFileBar();
       }
     };
@@ -286,7 +267,7 @@ function fallbackImportFile() {
     parseExcelFile(file).then(() => {
       updateFileBar();
       showToast('📥 นำเข้าข้อมูลแล้ว (โหมดสำรอง)');
-    }).catch(err => alert('อ่านไฟล์ไม่สำเร็จ: ' + err.message));
+    });
   };
   input.click();
 }
@@ -296,7 +277,6 @@ function genId() { return Date.now().toString(36) + Math.random().toString(36).s
 
 function showToast(msg) {
   const t = document.getElementById('toast');
-  if (!t) return;
   t.textContent = msg;
   t.classList.add('show');
   clearTimeout(t._timer);
@@ -320,7 +300,6 @@ function updateAdminUI() {
   const banner = document.getElementById('readonlyBanner');
   const fab = document.getElementById('fabAdd');
   const adminBtns = document.querySelectorAll('.admin-only');
-  if (!badge || !text || !icon || !banner || !fab) return;
 
   if (isAdmin) {
     badge.classList.add('unlocked');
@@ -356,13 +335,10 @@ function handleAdminClick() {
 function openPinModal(callback) {
   pinBuffer = '';
   pinCallback = callback || null;
-  const title = document.getElementById('pinTitle');
-  const err = document.getElementById('pinError');
-  if (title) title.textContent = callback ? '🔐 ยืนยันตัวตน' : '🔐 เข้าสู่โหมดแอดมิน';
-  if (err) err.textContent = '';
+  document.getElementById('pinTitle').textContent = callback ? '🔐 ยืนยันตัวตน' : '🔐 เข้าสู่โหมดแอดมิน';
+  document.getElementById('pinError').textContent = '';
   renderPinDots();
-  const modal = document.getElementById('pinModal');
-  if (modal) modal.classList.add('show');
+  document.getElementById('pinModal').classList.add('show');
 }
 
 function renderPinDots() {
@@ -375,16 +351,14 @@ function pinInput(digit) {
   if (pinBuffer.length >= CONFIG.PIN_LENGTH) return;
   pinBuffer += digit;
   renderPinDots();
-  const err = document.getElementById('pinError');
-  if (err) err.textContent = '';
+  document.getElementById('pinError').textContent = '';
   if (pinBuffer.length === CONFIG.PIN_LENGTH) setTimeout(checkPin, 150);
 }
 
 function pinBackspace() {
   pinBuffer = pinBuffer.slice(0, -1);
   renderPinDots();
-  const err = document.getElementById('pinError');
-  if (err) err.textContent = '';
+  document.getElementById('pinError').textContent = '';
 }
 
 function checkPin() {
@@ -400,8 +374,7 @@ function checkPin() {
     }
     pinBuffer = '';
   } else {
-    const err = document.getElementById('pinError');
-    if (err) err.textContent = '❌ PIN ไม่ถูกต้อง';
+    document.getElementById('pinError').textContent = '❌ PIN ไม่ถูกต้อง';
     pinBuffer = '';
     renderPinDots();
     if (navigator.vibrate) navigator.vibrate(200);
@@ -416,8 +389,6 @@ function requireAdmin(action) {
 function saveAdminPin(p) {
   adminPin = p;
   localStorage.setItem(CONFIG.ADMIN_KEY, p);
-  // sync to cloud
-  if (typeof window.pushToCloud === 'function') window.pushToCloud();
 }
 
 // ============ Render ============
@@ -429,20 +400,19 @@ function renderStats() {
     return d !== null && d !== 0;
   }).length;
 
-  const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-  setText('statTotal', total);
-  setText('statCounted', counted);
-  setText('statDiff', diff);
-  setText('tabCountAll', total);
-  setText('tabCountPending', total - counted);
-  setText('tabCountDone', counted);
-  setText('tabCountDiff', diff);
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statCounted').textContent = counted;
+  document.getElementById('statDiff').textContent = diff;
+
+  const pending = total - counted;
+  document.getElementById('tabCountAll').textContent = total;
+  document.getElementById('tabCountPending').textContent = pending;
+  document.getElementById('tabCountDone').textContent = counted;
+  document.getElementById('tabCountDiff').textContent = diff;
 }
 
 function renderList() {
   const container = document.getElementById('productList');
-  if (!container) return;
-
   let list = products;
 
   if (currentTab === 'pending') {
@@ -472,7 +442,6 @@ function renderList() {
         <div class="title">ไม่พบรายการสินค้า</div>
         <div class="desc">${isAdmin ? 'กดปุ่ม + เพื่อเพิ่มสินค้า หรือเปิดไฟล์ Excel' : 'กรุณาให้แอดมินเพิ่มสินค้า'}</div>
       </div>`;
-    updateSelectionBar();
     return;
   }
 
@@ -493,6 +462,7 @@ function renderList() {
       }
     }
     const isSelected = selectedIds.has(p.id);
+    const cat = (p.category || '').trim() || DEFAULT_CATEGORY;
     return `
       <div class="product-card ${cardClass} ${isSelected ? 'selected' : ''}"
            data-id="${p.id}" data-category="${escapeHtml(p.category || '')}"
@@ -537,11 +507,7 @@ function renderList() {
   updateSelectionBar();
 }
 
-function render() {
-  renderStats();
-  renderList();
-  updateSaveBar();
-}
+function render() { renderStats(); renderList(); updateSaveBar(); }
 
 // ============ Selection Mode ============
 function toggleSelectMode() {
@@ -554,14 +520,10 @@ function enterSelectMode() {
   selectMode = true;
   selectedIds.clear();
   document.body.classList.add('select-mode');
-  const bar = document.getElementById('selectionBar');
-  const btn = document.getElementById('selectModeBtn');
-  const fab = document.getElementById('fabAdd');
-  const saveBar = document.getElementById('saveBar');
-  if (bar) bar.classList.add('show');
-  if (btn) btn.textContent = '✖ ยกเลิก';
-  if (fab) fab.classList.add('hidden');
-  if (saveBar) saveBar.style.display = 'none';
+  document.getElementById('selectionBar').classList.add('show');
+  document.getElementById('selectModeBtn').textContent = '✖ ยกเลิก';
+  document.getElementById('fabAdd').classList.add('hidden');
+  document.getElementById('saveBar').style.display = 'none';
   renderList();
 }
 
@@ -569,14 +531,10 @@ function exitSelectMode() {
   selectMode = false;
   selectedIds.clear();
   document.body.classList.remove('select-mode');
-  const bar = document.getElementById('selectionBar');
-  const btn = document.getElementById('selectModeBtn');
-  const fab = document.getElementById('fabAdd');
-  const saveBar = document.getElementById('saveBar');
-  if (bar) bar.classList.remove('show');
-  if (btn) btn.textContent = '☑️ เลือกลบ';
-  if (isAdmin && fab) fab.classList.remove('hidden');
-  if (fileHandle && saveBar) saveBar.style.display = 'flex';
+  document.getElementById('selectionBar').classList.remove('show');
+  document.getElementById('selectModeBtn').textContent = '☑️ เลือกลบ';
+  if (isAdmin) document.getElementById('fabAdd').classList.remove('hidden');
+  if (fileHandle) document.getElementById('saveBar').style.display = 'flex';
   renderList();
 }
 
@@ -590,10 +548,8 @@ function handleCardClick(event, id) {
 
 function updateSelectionBar() {
   const n = selectedIds.size;
-  const countEl = document.getElementById('selectedCount');
-  const delBtn = document.getElementById('deleteSelectedBtn');
-  if (countEl) countEl.textContent = n;
-  if (delBtn) delBtn.disabled = n === 0;
+  document.getElementById('selectedCount').textContent = n;
+  document.getElementById('deleteSelectedBtn').disabled = n === 0;
 }
 
 function deleteSelected() {
@@ -622,12 +578,9 @@ function deleteSingle(id) {
 }
 
 function showConfirmDelete(title, text) {
-  const t = document.getElementById('confirmDeleteTitle');
-  const x = document.getElementById('confirmDeleteText');
-  const m = document.getElementById('confirmDeleteModal');
-  if (t) t.textContent = title;
-  if (x) x.textContent = text;
-  if (m) m.classList.add('show');
+  document.getElementById('confirmDeleteTitle').textContent = title;
+  document.getElementById('confirmDeleteText').textContent = text;
+  document.getElementById('confirmDeleteModal').classList.add('show');
 }
 
 function confirmDeleteExecute() {
@@ -673,17 +626,14 @@ function fillCategoryList() {
 function openAddModal() {
   requireAdmin(() => {
     editingId = null;
-    const title = document.getElementById('modalTitle');
-    if (title) title.textContent = 'เพิ่มสินค้า';
-    const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
-    setVal('inputName', '');
-    setVal('inputSku', '');
-    setVal('inputCategory', '');
-    setVal('inputSystem', '');
+    document.getElementById('modalTitle').textContent = 'เพิ่มสินค้า';
+    document.getElementById('inputName').value = '';
+    document.getElementById('inputSku').value = '';
+    document.getElementById('inputCategory').value = '';
+    document.getElementById('inputSystem').value = '';
     fillCategoryList();
-    const modal = document.getElementById('productModal');
-    if (modal) modal.classList.add('show');
-    setTimeout(() => { const n = document.getElementById('inputName'); if (n) n.focus(); }, 200);
+    document.getElementById('productModal').classList.add('show');
+    setTimeout(() => document.getElementById('inputName').focus(), 200);
   });
 }
 
@@ -692,25 +642,21 @@ function openEditModal(id) {
     const p = products.find(x => x.id === id);
     if (!p) return;
     editingId = id;
-    const title = document.getElementById('modalTitle');
-    if (title) title.textContent = 'แก้ไขสินค้า';
-    const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
-    setVal('inputName', p.name);
-    setVal('inputSku', p.sku || '');
-    setVal('inputCategory', p.category || '');
-    setVal('inputSystem', p.system);
+    document.getElementById('modalTitle').textContent = 'แก้ไขสินค้า';
+    document.getElementById('inputName').value = p.name;
+    document.getElementById('inputSku').value = p.sku || '';
+    document.getElementById('inputCategory').value = p.category || '';
+    document.getElementById('inputSystem').value = p.system;
     fillCategoryList();
-    const modal = document.getElementById('productModal');
-    if (modal) modal.classList.add('show');
+    document.getElementById('productModal').classList.add('show');
   });
 }
 
 function saveProduct() {
-  const getVal = (id) => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
-  const name = getVal('inputName');
-  const sku = getVal('inputSku');
-  const category = getVal('inputCategory');
-  const system = parseInt(getVal('inputSystem')) || 0;
+  const name = document.getElementById('inputName').value.trim();
+  const sku = document.getElementById('inputSku').value.trim();
+  const category = document.getElementById('inputCategory').value.trim();
+  const system = parseInt(document.getElementById('inputSystem').value) || 0;
   if (!name) { alert('กรุณากรอกชื่อสินค้า'); return; }
 
   if (editingId) {
@@ -751,20 +697,17 @@ function clearAll() {
 
 function openChangePinModal() {
   requireAdmin(() => {
-    const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
-    setVal('oldPin', '');
-    setVal('newPin', '');
-    setVal('confirmPin', '');
-    const modal = document.getElementById('changePinModal');
-    if (modal) modal.classList.add('show');
+    document.getElementById('oldPin').value = '';
+    document.getElementById('newPin').value = '';
+    document.getElementById('confirmPin').value = '';
+    document.getElementById('changePinModal').classList.add('show');
   });
 }
 
 function changePin() {
-  const getVal = (id) => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
-  const oldP = getVal('oldPin');
-  const newP = getVal('newPin');
-  const confP = getVal('confirmPin');
+  const oldP = document.getElementById('oldPin').value.trim();
+  const newP = document.getElementById('newPin').value.trim();
+  const confP = document.getElementById('confirmPin').value.trim();
   if (oldP !== adminPin) { alert('PIN เดิมไม่ถูกต้อง'); return; }
   if (!/^\d{4}$/.test(newP)) { alert('PIN ใหม่ต้องเป็นตัวเลข 4 หลัก'); return; }
   if (newP !== confP) { alert('PIN ใหม่และยืนยันไม่ตรงกัน'); return; }
@@ -775,16 +718,17 @@ function changePin() {
 
 // ============ Modal Helpers ============
 function closeModal(id) {
-  const m = document.getElementById(id);
-  if (m) m.classList.remove('show');
+  document.getElementById(id).classList.remove('show');
 }
 
 // ============ Events ============
 function setupEvents() {
+  // Modal backdrop click
   document.querySelectorAll('.modal').forEach(m => {
     m.addEventListener('click', e => { if (e.target === m) closeModal(m.id); });
   });
 
+  // Tabs
   document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -794,17 +738,15 @@ function setupEvents() {
     });
   });
 
-  const searchInput = document.getElementById('searchInput');
-  if (searchInput) {
-    searchInput.addEventListener('input', e => {
-      searchTerm = e.target.value;
-      renderList();
-    });
-  }
+  // Search
+  document.getElementById('searchInput').addEventListener('input', e => {
+    searchTerm = e.target.value;
+    renderList();
+  });
 
+  // PIN keyboard
   document.addEventListener('keydown', e => {
-    const pinModal = document.getElementById('pinModal');
-    if (!pinModal || !pinModal.classList.contains('show')) return;
+    if (!document.getElementById('pinModal').classList.contains('show')) return;
     if (/^\d$/.test(e.key)) pinInput(e.key);
     else if (e.key === 'Backspace') pinBackspace();
     else if (e.key === 'Escape') closeModal('pinModal');
@@ -812,41 +754,5 @@ function setupEvents() {
 }
 
 // ============ Init ============
-// รอ DOM พร้อมก่อน แล้วค่อยทำงาน
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    setupEvents();
-    loadData();
-  });
-} else {
-  setupEvents();
-  loadData();
-}
-
-// เปิดให้ jap.js เรียกใช้ได้
-window.render = render;
-window.products = products;
-window.handleAdminClick = handleAdminClick;
-window.openExcelFile = openExcelFile;
-window.saveToFile = saveToFile;
-window.toggleSelectMode = toggleSelectMode;
-window.resetCount = resetCount;
-window.clearAll = clearAll;
-window.openChangePinModal = openChangePinModal;
-window.openAddModal = openAddModal;
-window.changePin = changePin;
-window.deleteSingle = deleteSingle;
-window.openEditModal = openEditModal;
-window.saveProduct = saveProduct;
-window.changeCount = changeCount;
-window.setCount = setCount;
-window.handleCardClick = handleCardClick;
-window.deleteSelected = deleteSelected;
-window.confirmDeleteExecute = confirmDeleteExecute;
-window.closeModal = closeModal;
-window.pinInput = pinInput;
-window.pinBackspace = pinBackspace;
-window.requireAdmin = requireAdmin;
-window.saveAdminPin = saveAdminPin;
-window.showToast = showToast;
-window.saveDataToCache = saveDataToCache;
+setupEvents();
+loadData();

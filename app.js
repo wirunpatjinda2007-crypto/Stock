@@ -616,11 +616,18 @@ function setCount(id, val) {
 }
 
 // ============ Admin Actions ============
-function fillCategoryList() {
-  const list = document.getElementById('catList');
-  if (!list) return;
-  const cats = [...new Set(products.map(p => (p.category || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'th'));
-  list.innerHTML = cats.map(c => `<option value="${escapeHtml(c)}"></option>`).join('');
+// Make sure the category <select> can show a category that is not one of the presets
+// (e.g. a value imported from an existing Excel file).
+function setCategorySelect(value) {
+  const sel = document.getElementById('inputCategory');
+  const v = (value || '').trim();
+  if (v && ![...sel.options].some(o => o.value === v)) {
+    const opt = document.createElement('option');
+    opt.value = v;
+    opt.textContent = v;
+    sel.appendChild(opt);
+  }
+  sel.value = v;
 }
 
 function openAddModal() {
@@ -628,10 +635,8 @@ function openAddModal() {
     editingId = null;
     document.getElementById('modalTitle').textContent = 'เพิ่มสินค้า';
     document.getElementById('inputName').value = '';
-    document.getElementById('inputSku').value = '';
-    document.getElementById('inputCategory').value = '';
+    setCategorySelect('');
     document.getElementById('inputSystem').value = '';
-    fillCategoryList();
     document.getElementById('productModal').classList.add('show');
     setTimeout(() => document.getElementById('inputName').focus(), 200);
   });
@@ -644,27 +649,25 @@ function openEditModal(id) {
     editingId = id;
     document.getElementById('modalTitle').textContent = 'แก้ไขสินค้า';
     document.getElementById('inputName').value = p.name;
-    document.getElementById('inputSku').value = p.sku || '';
-    document.getElementById('inputCategory').value = p.category || '';
+    setCategorySelect(p.category);
     document.getElementById('inputSystem').value = p.system;
-    fillCategoryList();
     document.getElementById('productModal').classList.add('show');
   });
 }
 
 function saveProduct() {
   const name = document.getElementById('inputName').value.trim();
-  const sku = document.getElementById('inputSku').value.trim();
   const category = document.getElementById('inputCategory').value.trim();
   const system = parseInt(document.getElementById('inputSystem').value) || 0;
   if (!name) { alert('กรุณากรอกชื่อสินค้า'); return; }
 
   if (editingId) {
+    // SKU is no longer edited in the modal; existing sku value is kept as-is.
     const p = products.find(x => x.id === editingId);
-    if (p) { p.name = name; p.sku = sku; p.category = category; p.system = system; }
+    if (p) { p.name = name; p.category = category; p.system = system; }
     showToast('✅ แก้ไขสินค้าแล้ว');
   } else {
-    products.push({ id: genId(), name, sku, category, system, counted: null });
+    products.push({ id: genId(), name, sku: '', category, system, counted: null });
     showToast('✅ เพิ่มสินค้าแล้ว');
   }
   saveDataToCache();

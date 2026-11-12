@@ -92,6 +92,29 @@ async function parseExcelFile(file) {
         const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
         const jsonData = XLSX.utils.sheet_to_json(firstSheet);
 
+        // อ่านคำขอจากชีต "คำขอ" (ถ้ามี) แล้วรวมเข้ากับรายการในเครื่อง โดยไม่ซ้ำตาม id
+        if (workbook.Sheets[REQ_SHEET_NAME]) {
+          const reqData = XLSX.utils.sheet_to_json(workbook.Sheets[REQ_SHEET_NAME]);
+          const local = loadRequests();
+          const known = new Set(local.map(r => r.id));
+          reqData.forEach(row => {
+            const id = String(row[REQ_ID_COL] || '').trim();
+            const text = String(row['รายการ'] || '').trim();
+            if (!id || !text || known.has(id)) return;
+            known.add(id);
+            const at = new Date(row['วันที่']);
+            local.push({
+              id,
+              name: String(row['ผู้ส่ง'] || 'ไม่ระบุชื่อ').trim(),
+              text,
+              at: isNaN(at) ? new Date().toISOString() : at.toISOString()
+            });
+          });
+          local.sort((a, b) => new Date(b.at) - new Date(a.at));
+          saveRequests(local);
+          renderRequests();
+        }
+
         if (jsonData.length === 0) {
           alert('ไม่พบข้อมูลในไฟล์ Excel');
           reject(new Error('No data'));
@@ -167,6 +190,16 @@ async function saveToFile() {
     const ws = XLSX.utils.json_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, CONFIG.SHEET_NAME);
+
+    // ชีตคำขอจากพนักงาน (เขียนทุกครั้งที่บันทึก เพื่อให้มีประวัติครบในไฟล์เดียวกัน)
+    const reqRows = loadRequests().map(r => ({
+      [REQ_ID_COL]: r.id,
+      'วันที่': new Date(r.at).toLocaleString('th-TH'),
+      'ผู้ส่ง': r.name,
+      'รายการ': r.text
+    }));
+    const reqWs = XLSX.utils.json_to_sheet(reqRows.length ? reqRows : [{ [REQ_ID_COL]: '', 'วันที่': '', 'ผู้ส่ง': '', 'รายการ': '' }]);
+    XLSX.utils.book_append_sheet(wb, reqWs, REQ_SHEET_NAME);
 
     const writable = await fileHandle.createWritable();
     const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
@@ -453,8 +486,10 @@ function renderSummaryCharts() {
 }
 
 // ============ Requests / messages from staff (home page) ============
-// Stored in this browser only (localStorage). Not shared between devices.
+// Local copy in localStorage; synced to cloud by sync.js and written to the Excel file as a second sheet.
 const REQ_KEY = 'stockflow_requests';
+const REQ_SHEET_NAME = 'คำขอ';
+const REQ_ID_COL = 'รหัสคำขอ';
 
 function loadRequests() {
   try {

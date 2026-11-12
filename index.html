@@ -377,6 +377,96 @@
     .selection-bar.show { transform: translateY(0); }
     .product-list { grid-template-columns: repeat(2, 1fr); }
   }
+  /* ---------- Phone (≤ 599px) ---------- */
+  @media (max-width: 599px) {
+    body { padding-bottom: 110px; }
+
+    /* Topbar */
+    .topbar {
+      padding: 10px 14px;
+      gap: 10px;
+      justify-content: space-between;
+    }
+    .topbar .admin-badge { font-size: 11px; padding: 6px 10px; }
+    .topbar .bell { width: 34px; height: 34px; }
+    .user-chip span,
+    .user-chip > svg:last-child { display: none; }
+    .user-chip .avatar { width: 34px; height: 34px; }
+
+    /* Hero: compact, no decorative icon */
+    .hero {
+      margin: 12px 14px 0;
+      padding: 14px 16px;
+      border-radius: 14px;
+      gap: 0;
+    }
+    .hero-icon { display: none; }
+    .hero h2 { font-size: 19px; }
+    .hero p { font-size: 12px; margin-top: 4px; }
+
+    /* Stats: three compact columns, no sparkline overlap */
+    .stats-wrap { padding: 0; margin: 12px 14px 0; }
+    .stats-wrap .stats { gap: 8px; }
+    .stats-wrap .stat-box {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 12px 10px;
+      border-radius: 12px;
+    }
+    .stats-wrap .stat-ic { width: 36px; height: 36px; }
+    .stats-wrap .stat-ic svg { width: 18px; height: 18px; }
+    .stats-wrap .stat-box .spark { display: none; }
+    .stats-wrap .stat-box .label { font-size: 11px; margin-bottom: 2px; line-height: 1.3; }
+    .stats-wrap .stat-box .num { font-size: 22px; }
+
+    /* Panel */
+    .panel {
+      margin: 12px 14px 0;
+      padding: 14px 12px 6px;
+      border-radius: 14px;
+    }
+    .panel-head {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .panel-title { gap: 10px; }
+    .panel-title .pt-icon { width: 40px; height: 40px; }
+    .panel-title h3 { font-size: 16px; }
+    .panel-title p { font-size: 12px; }
+    .panel-head .btn-primary { width: 100%; padding: 12px; }
+
+    .panel .file-bar { padding: 12px; }
+    .panel .file-bar .file-name { font-size: 14px; }
+    .panel .search-bar input { padding: 12px 14px 12px 42px; font-size: 14px; }
+    .panel .tabs { padding-bottom: 10px; }
+    .panel .tab { padding: 8px 12px; font-size: 12px; }
+    .panel .actions-bar { padding-bottom: 10px; }
+
+    /* Product cards: single column, tighter */
+    .product-list { padding-bottom: 8px; }
+    .product-card { padding: 14px 12px; }
+    .product-name { font-size: 14px; }
+    .product-header { gap: 8px; }
+    .product-info { font-size: 12px; margin-bottom: 10px; padding: 10px 0; }
+    .product-info .info-item + .info-item { padding-left: 10px; }
+    .product-info .info-value { font-size: 14px; }
+    .count-controls { max-width: none; width: 100%; }
+    .count-controls button { width: 48px; height: 40px; }
+
+    /* Readonly banner spacing */
+    #readonlyBanner { margin: 12px 14px 0 !important; border-radius: 10px !important; }
+
+    /* Bottom bars and FAB */
+    .save-bar { padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); gap: 10px; }
+    .save-bar .status { font-size: 12px; min-width: 0; }
+    .save-bar .status svg { width: 16px; height: 16px; }
+    .save-bar .btn-success { min-width: 0; padding: 10px 14px; font-size: 13px; }
+    .fab { right: 16px; bottom: 84px; width: 50px; height: 50px; }
+    .toast { bottom: 96px; }
+  }
 </style>
 </head>
 <body>

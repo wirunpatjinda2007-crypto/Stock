@@ -99,13 +99,13 @@ async function parseExcelFile(file) {
           const known = new Set(local.map(r => r.id));
           reqData.forEach(row => {
             const id = String(row[REQ_ID_COL] || '').trim();
-            const text = String(row['รายการ'] || '').trim();
+            const text = String(row['คอมเม้น'] || '').trim();
             if (!id || !text || known.has(id)) return;
             known.add(id);
             const at = new Date(row['วันที่']);
             local.push({
               id,
-              name: String(row['ผู้ส่ง'] || 'ไม่ระบุชื่อ').trim(),
+              name: String(row['ชื่อ'] || 'ไม่ระบุชื่อ').trim(),
               text,
               at: isNaN(at) ? new Date().toISOString() : at.toISOString()
             });
@@ -193,12 +193,12 @@ async function saveToFile() {
 
     // ชีตคำขอจากพนักงาน (เขียนทุกครั้งที่บันทึก เพื่อให้มีประวัติครบในไฟล์เดียวกัน)
     const reqRows = loadRequests().map(r => ({
-      [REQ_ID_COL]: r.id,
+      'ชื่อ': r.name,
+      'คอมเม้น': r.text,
       'วันที่': new Date(r.at).toLocaleString('th-TH'),
-      'ผู้ส่ง': r.name,
-      'รายการ': r.text
+      [REQ_ID_COL]: r.id
     }));
-    const reqWs = XLSX.utils.json_to_sheet(reqRows.length ? reqRows : [{ [REQ_ID_COL]: '', 'วันที่': '', 'ผู้ส่ง': '', 'รายการ': '' }]);
+    const reqWs = XLSX.utils.json_to_sheet(reqRows.length ? reqRows : [{ 'ชื่อ': '', 'คอมเม้น': '', 'วันที่': '', [REQ_ID_COL]: '' }]);
     XLSX.utils.book_append_sheet(wb, reqWs, REQ_SHEET_NAME);
 
     const writable = await fileHandle.createWritable();
@@ -488,8 +488,8 @@ function renderSummaryCharts() {
 // ============ Requests / messages from staff (home page) ============
 // Local copy in localStorage; synced to cloud by sync.js and written to the Excel file as a second sheet.
 const REQ_KEY = 'stockflow_requests';
-const REQ_SHEET_NAME = 'คำขอ';
-const REQ_ID_COL = 'รหัสคำขอ';
+const REQ_SHEET_NAME = 'Sheet1';   // ชีตที่ใช้เก็บคำขอ/คอมเม้น
+const REQ_ID_COL = 'รหัส';          // คอลัมน์รหัสสำหรับกันข้อมูลซ้ำ
 
 function loadRequests() {
   try {

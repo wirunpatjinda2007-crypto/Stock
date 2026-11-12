@@ -500,6 +500,36 @@
     .toast { bottom: 96px; }
   }
 
+  /* ---------- Categories ---------- */
+  .cat-bar { display: flex; align-items: center; gap: 10px; padding: 0 0 14px; }
+  .cat-label { font-size: 13px; color: #475569; font-weight: 600; }
+  .cat-select {
+    padding: 9px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    font: inherit;
+    font-size: 13px;
+    color: #0f1d36;
+    background: #fff;
+    min-width: 180px;
+  }
+  .cat-select:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(147,197,253,0.45); }
+  .cat-chip {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-size: 11px;
+    font-weight: 600;
+    vertical-align: middle;
+  }
+  .product-card.cat-hidden { display: none !important; }
+  @media (max-width: 599px) {
+    .cat-select { min-width: 0; flex: 1; }
+  }
+
   /* ---------- Print (report) ---------- */
   @media print {
     .sidebar, .topbar, .page-actions, .save-bar, .fab, .selection-bar { display: none !important; }
@@ -699,6 +729,13 @@
         </div>
       </div>
 
+      <div class="cat-bar">
+        <span class="cat-label">หมวดหมู่</span>
+        <select id="catFilter" class="cat-select">
+          <option value="all">ทุกหมวดหมู่</option>
+        </select>
+      </div>
+
       <div class="tabs">
         <div class="tab active" data-tab="all">ทั้งหมด <span class="count-badge" id="tabCountAll">0</span></div>
         <div class="tab" data-tab="pending">ยังไม่บันทึก <span class="count-badge" id="tabCountPending">0</span></div>
@@ -742,6 +779,7 @@
         <thead>
           <tr>
             <th>สินค้า</th>
+            <th>หมวดหมู่</th>
             <th>SKU</th>
             <th class="num">ในระบบ</th>
             <th class="num">นับได้</th>
@@ -826,6 +864,11 @@
     <div class="form-group">
       <label>SKU / รหัสสินค้า</label>
       <input type="text" id="inputSku" placeholder="เช่น SKU001">
+    </div>
+    <div class="form-group">
+      <label>หมวดหมู่</label>
+      <input type="text" id="inputCategory" placeholder="เช่น ของกิน" list="catList">
+      <datalist id="catList"></datalist>
     </div>
     <div class="form-group">
       <label>จำนวนในระบบ *</label>
@@ -1019,7 +1062,7 @@
       if (card.classList.contains('short')) { status = 'short'; label = 'ขาด'; }
       else if (card.classList.contains('over')) { status = 'over'; label = 'เกิน'; }
       else if (card.classList.contains('ok')) { status = 'ok'; label = 'ครบ'; }
-      return { name, sku, system, counted, diff: counted - system, status, label };
+      return { name, category: (card.dataset.category || '').trim() || 'ไม่ระบุ', sku, system, counted, diff: counted - system, status, label };
     });
   }
 
@@ -1047,6 +1090,7 @@
       const sign = r.diff > 0 ? '+' : '';
       return `<tr>
         <td>${escapeHtml(r.name)}</td>
+        <td>${escapeHtml(r.category)}</td>
         <td>${escapeHtml(r.sku)}</td>
         <td class="num">${r.system}</td>
         <td class="num">${r.counted}</td>
@@ -1059,8 +1103,8 @@
   window.exportReportCsv = function () {
     const rows = readCards();
     if (!rows.length) { uiToast('ยังไม่มีข้อมูลให้ส่งออก'); return; }
-    const header = ['สินค้า', 'SKU', 'ในระบบ', 'นับได้', 'ส่วนต่าง', 'สถานะ'];
-    const lines = [header, ...rows.map(r => [r.name, r.sku, r.system, r.counted, r.diff, r.label])]
+    const header = ['สินค้า', 'หมวดหมู่', 'SKU', 'ในระบบ', 'นับได้', 'ส่วนต่าง', 'สถานะ'];
+    const lines = [header, ...rows.map(r => [r.name, r.category, r.sku, r.system, r.counted, r.diff, r.label])]
       .map(cols => cols.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','));
     const blob = new Blob(['\uFEFF' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
     const d = new Date();
@@ -1145,6 +1189,65 @@
   // ---------- init ----------
   showPage(currentFromHash());
   renderBell();
+})();
+</script>
+<!-- ============ Categories ============ -->
+<script>
+(function () {
+  const productList = document.getElementById('productList');
+  const sel = document.getElementById('catFilter');
+  const DEFAULT_CAT = 'ไม่ระบุ';
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[c]);
+  }
+  function catOf(card) {
+    return (card.dataset.category || '').trim() || DEFAULT_CAT;
+  }
+
+  function applyFilter() {
+    const v = sel.value;
+    productList.querySelectorAll('.product-card').forEach(card => {
+      card.classList.toggle('cat-hidden', v !== 'all' && catOf(card) !== v);
+    });
+  }
+
+  function decorate() {
+    const cards = Array.from(productList.querySelectorAll('.product-card'));
+
+    // add a category chip to each card once
+    cards.forEach(card => {
+      const title = card.querySelector('.product-title');
+      if (!title) return;
+      let chip = card.querySelector('.cat-chip');
+      if (!chip) {
+        chip = document.createElement('span');
+        chip.className = 'cat-chip';
+        title.appendChild(chip);
+      }
+      if (chip.textContent !== catOf(card)) chip.textContent = catOf(card);
+    });
+
+    // rebuild dropdown options, keeping the current choice if it still exists
+    const cats = [...new Set(cards.map(catOf))].sort((a, b) => a.localeCompare(b, 'th'));
+    const current = sel.value || 'all';
+    sel.innerHTML = '<option value="all">ทุกหมวดหมู่</option>' +
+      cats.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+    sel.value = (current === 'all' || cats.includes(current)) ? current : 'all';
+
+    const dl = document.getElementById('catList');
+    if (dl) dl.innerHTML = cats.filter(c => c !== DEFAULT_CAT)
+      .map(c => `<option value="${esc(c)}"></option>`).join('');
+
+    applyFilter();
+  }
+
+  sel.addEventListener('change', applyFilter);
+
+  new MutationObserver(decorate).observe(productList, { childList: true, subtree: true });
+  decorate();
 })();
 </script>
 </body>

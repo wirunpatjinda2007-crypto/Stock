@@ -5,102 +5,588 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#0f172a">
+<meta name="theme-color" content="#0a2259">
 <title>StockFlow — ระบบจัดการสต๊อก</title>
 
 <!-- Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Thai:wght@400;500;600;700;800&family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <!-- SheetJS -->
 <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
 
 <!-- Styles -->
 <link rel="stylesheet" href="styles.css">
+
+<!-- Layout for the dashboard look (sidebar + topbar + hero + panel) -->
+<style>
+  body {
+    display: flex;
+    max-width: none !important;
+    margin: 0;
+    background: #f3f6fb;
+    padding-bottom: 120px;
+  }
+
+  /* ---------- Sidebar ---------- */
+  .sidebar {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: 240px;
+    background: linear-gradient(180deg, #0a2259 0%, #0b2a6b 100%);
+    color: #fff;
+    padding: 28px 16px 20px;
+    display: flex;
+    flex-direction: column;
+    z-index: 40;
+    overflow: hidden;
+  }
+  .sidebar::after {
+    content: "";
+    position: absolute;
+    left: -20%; right: -20%; bottom: -60px;
+    height: 260px;
+    background: radial-gradient(ellipse at 50% 100%, rgba(59,130,246,0.35), transparent 65%);
+    pointer-events: none;
+  }
+  .side-brand {
+    text-align: center;
+    padding: 6px 0 28px;
+    position: relative; z-index: 1;
+  }
+  .side-brand .logo-cube {
+    width: 58px; height: 58px;
+    margin: 0 auto 10px;
+    display: block;
+  }
+  .side-brand h1 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.2px;
+  }
+  .side-brand p {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: #bfdbfe;
+  }
+  .side-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    position: relative; z-index: 1;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    color: #dbeafe;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.15s;
+  }
+  .nav-item svg { width: 20px; height: 20px; flex-shrink: 0; }
+  .nav-item:hover { background: rgba(255,255,255,0.08); }
+  .nav-item.active {
+    background: #2563eb;
+    color: #fff;
+    box-shadow: 0 6px 16px rgba(37,99,235,0.35);
+  }
+  .side-foot {
+    margin-top: auto;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(147,197,253,0.2);
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 13px;
+    position: relative; z-index: 1;
+  }
+  .side-foot .online {
+    display: flex; align-items: center; gap: 8px;
+    color: #6ee7b7; font-weight: 500;
+  }
+  .side-foot .online .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 0 3px rgba(16,185,129,0.25);
+  }
+  .side-foot .user-line {
+    margin-top: 8px; color: #dbeafe;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  /* ---------- Main column ---------- */
+  .main {
+    margin-left: 240px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* ---------- Topbar ---------- */
+  .topbar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 18px;
+    padding: 14px 28px;
+    background: #fff;
+    border-bottom: 1px solid #e2e8f0;
+    position: sticky;
+    top: 0;
+    z-index: 15;
+  }
+  .bell {
+    position: relative;
+    width: 38px; height: 38px;
+    display: flex; align-items: center; justify-content: center;
+    color: #1e3a8a;
+    border-radius: 10px;
+  }
+  .bell .badge-dot {
+    position: absolute;
+    top: 2px; right: 2px;
+    min-width: 17px; height: 17px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: #dc2626;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid #fff;
+  }
+  .user-chip {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; font-weight: 600; color: #0f1d36;
+  }
+  .user-chip .avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: #1e3a8a;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .topbar .admin-badge {
+    background: #eff6ff;
+    color: #1e40af;
+    border: 1px solid #bfdbfe;
+  }
+  .topbar .admin-badge:hover { background: #dbeafe; }
+  .topbar .admin-badge.unlocked {
+    background: #059669; color: #fff; border-color: #059669;
+  }
+
+  /* ---------- Hero banner ---------- */
+  .hero {
+    position: relative;
+    margin: 20px 28px 0;
+    padding: 26px 30px;
+    border-radius: 18px;
+    background:
+      linear-gradient(100deg, rgba(10,34,89,0.97) 0%, rgba(30,58,138,0.9) 55%, rgba(37,99,235,0.7) 100%),
+      repeating-linear-gradient(90deg, rgba(147,197,253,0.10) 0 2px, transparent 2px 64px),
+      repeating-linear-gradient(0deg, rgba(147,197,253,0.10) 0 2px, transparent 2px 46px),
+      #0b2a6b;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(10,34,89,0.18);
+  }
+  .hero-icon {
+    width: 76px; height: 76px;
+    border-radius: 18px;
+    background: rgba(59,130,246,0.35);
+    border: 1px solid rgba(147,197,253,0.5);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.2);
+  }
+  .hero h2 {
+    margin: 0;
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+  .hero p {
+    margin: 6px 0 0;
+    font-size: 15px;
+    color: #dbeafe;
+  }
+
+  /* ---------- Stats ---------- */
+  .stats-wrap { padding: 20px 28px 0; }
+  .stats-wrap .stats { gap: 16px; }
+  .stats-wrap .stat-box {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 22px;
+    position: relative;
+    overflow: hidden;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(15,23,42,0.04);
+  }
+  .stat-ic {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .stat-txt { position: relative; z-index: 1; }
+  .stat-box .label { margin-bottom: 8px; font-size: 14px; color: #334155; font-weight: 600; }
+  .stat-box .num { font-size: 32px; font-weight: 700; }
+  .stat-box .spark {
+    position: absolute;
+    right: 0; bottom: 0;
+    width: 52%; height: 70%;
+    opacity: 0.9;
+  }
+  .stat-box:nth-child(1) .stat-ic { background: #dbeafe; color: #2563eb; }
+  .stat-box:nth-child(1) .num { color: #1d4ed8; }
+  .stat-box.counted .stat-ic { background: #d1fae5; color: #059669; }
+  .stat-box.counted .num { color: #059669; }
+  .stat-box.diff .stat-ic { background: #ffedd5; color: #ea580c; }
+  .stat-box.diff .num { color: #0f1d36; }
+
+  /* ---------- Panel ---------- */
+  .panel {
+    margin: 20px 28px 0;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    padding: 22px 22px 8px;
+    box-shadow: 0 4px 16px rgba(15,23,42,0.05);
+  }
+  .panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .panel-title { display: flex; align-items: center; gap: 14px; min-width: 0; }
+  .panel-title .pt-icon {
+    width: 46px; height: 46px; border-radius: 12px;
+    background: #eff6ff; color: #2563eb;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .panel-title h3 {
+    margin: 0;
+    font-size: 19px;
+    font-weight: 700;
+    color: #0f1d36;
+  }
+  .panel-title p {
+    margin: 3px 0 0;
+    font-size: 13px;
+    color: #64748b;
+  }
+  .panel-head .btn-primary {
+    padding: 11px 20px;
+    border-radius: 12px;
+    background: #1d4ed8;
+    border-color: #1d4ed8;
+  }
+
+  .panel .file-bar {
+    margin: 0 0 14px;
+    padding: 14px 18px;
+    border: 1px solid #bfe9d4;
+    background: #f1fbf6;
+    border-radius: 12px;
+    box-shadow: none;
+  }
+  .panel .file-bar .file-icon {
+    background: #059669; color: #fff;
+    width: 40px; height: 40px; border-radius: 50%;
+    font-size: 16px;
+  }
+  .panel .file-bar .file-name { font-size: 15px; color: #0f1d36; }
+  .panel .file-bar .file-sub { font-size: 13px; }
+  .file-close {
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    color: #64748b;
+    flex-shrink: 0;
+  }
+
+  .panel .search-bar { padding: 0 0 12px; background: transparent; }
+  .panel .search-bar input {
+    padding: 14px 16px 14px 46px;
+    border-color: #cbd5e1;
+    border-radius: 12px;
+  }
+  .panel .search-wrapper .icon { left: 16px; color: #64748b; }
+
+  .panel .tabs { padding: 0 0 14px; background: transparent; }
+  .panel .tab { padding: 9px 16px; }
+
+  .panel .actions-bar { padding: 0 0 14px; }
+  .panel .product-list { padding: 0 0 12px; }
+
+  /* ---------- Save bar (bottom) ---------- */
+  .save-bar {
+    background: #fff;
+    border-top: 1px solid #e2e8f0;
+    padding: 14px 28px;
+  }
+  .save-bar .status {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px;
+    color: #334155;
+  }
+  .save-bar .status .info-ic { color: #2563eb; flex-shrink: 0; }
+  .save-bar .btn-success {
+    background: #1d4ed8;
+    border-color: #1d4ed8;
+    color: #fff;
+    padding: 12px 24px;
+    border-radius: 12px;
+    min-width: 170px;
+    box-shadow: 0 4px 12px rgba(29,78,216,0.25);
+  }
+  .save-bar .btn-success:hover:not(:disabled) { background: #1e40af; border-color: #1e40af; }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 899px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0; }
+    .hero, .stats-wrap, .panel { margin-left: 14px; margin-right: 14px; }
+    .stats-wrap { padding-left: 0; padding-right: 0; }
+    .hero { margin-top: 14px; }
+    .topbar { padding: 12px 16px; }
+    .hero h2 { font-size: 22px; }
+    .hero-icon { width: 56px; height: 56px; }
+  }
+
+  @media (min-width: 900px) {
+    .save-bar, .selection-bar {
+      left: 240px;
+      right: 0;
+      max-width: none;
+      margin: 0;
+      transform: translateY(100%);
+    }
+    .save-bar { transform: none; }
+    .selection-bar.show { transform: translateY(0); }
+    .product-list { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
 </head>
 <body>
 
-<!-- ============ Header ============ -->
-<header>
-  <div class="header-top">
-    <div class="brand">
-      <div class="brand-logo">📦</div>
-      <div class="brand-text">
-        <h1>StockFlow</h1>
-        <p>ระบบจัดการสต๊อก</p>
-      </div>
+<!-- ============ Sidebar ============ -->
+<aside class="sidebar">
+  <div class="side-brand">
+    <svg class="logo-cube" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+      <path d="M32 4 56 17v30L32 60 8 47V17L32 4Z" fill="#3b82f6"/>
+      <path d="M32 4 56 17 32 30 8 17 32 4Z" fill="#93c5fd"/>
+      <path d="M32 30v30L8 47V17l24 13Z" fill="#2563eb"/>
+      <path d="M32 30v30l24-13V17L32 30Z" fill="#1d4ed8"/>
+    </svg>
+    <h1>StockFlow</h1>
+    <p>ระบบเช็คสต็อก</p>
+  </div>
+  <nav class="side-nav">
+    <a class="nav-item active" href="#" onclick="return false;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1V10.5Z"/></svg>
+      หน้าหลัก
+    </a>
+    <a class="nav-item" href="#" onclick="return false;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="18" rx="2"/><path d="M9 4V3h6v1"/><path d="m9 13 2 2 4-4"/></svg>
+      เช็คสต็อก
+    </a>
+    <a class="nav-item" href="#" onclick="return false;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V11M10 20V4M16 20v-7M22 20H2"/></svg>
+      รายงาน
+    </a>
+    <a class="nav-item" href="#" onclick="return false;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>
+      การตั้งค่า
+    </a>
+    <a class="nav-item" href="#" onclick="return false;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
+      ออกจากระบบ
+    </a>
+  </nav>
+  <div class="side-foot">
+    <div class="online"><span class="dot"></span>ออนไลน์</div>
+    <div class="user-line">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+      ผู้ใช้งาน : Donxt
     </div>
+  </div>
+</aside>
+
+<div class="main">
+
+  <!-- ============ Topbar ============ -->
+  <div class="topbar">
     <div class="admin-badge" id="adminBadge" onclick="handleAdminClick()">
       <span id="adminIcon">🔓</span>
       <span id="adminText">โหมดทั่วไป</span>
     </div>
-  </div>
-  <div class="stats">
-    <div class="stat-box">
-      <div class="label">สินค้าทั้งหมด</div>
-      <div class="num" id="statTotal">0</div>
+    <div class="bell" aria-label="การแจ้งเตือน">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+      <span class="badge-dot">2</span>
     </div>
-    <div class="stat-box counted">
-      <div class="label">นับแล้ว</div>
-      <div class="num" id="statCounted">0</div>
-    </div>
-    <div class="stat-box diff">
-      <div class="label">รายการต่าง</div>
-      <div class="num" id="statDiff">0</div>
+    <div class="user-chip">
+      <div class="avatar">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0z"/></svg>
+      </div>
+      <span>Donxt</span>
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
     </div>
   </div>
-</header>
 
-<!-- ============ File Bar ============ -->
-<div class="file-bar" id="fileBar">
-  <div class="file-info">
-    <div class="file-icon" id="fileIcon">📄</div>
-    <div style="min-width:0;flex:1;">
-      <div class="file-name" id="fileName">ยังไม่ได้เชื่อมต่อไฟล์</div>
-      <div class="file-sub" id="fileSub">กรุณาเลือกไฟล์ Excel เพื่อเริ่มต้น</div>
+  <!-- ============ Hero ============ -->
+  <div class="hero">
+    <div class="hero-icon">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="18" rx="2"/><path d="M9 4V3h6v1"/><path d="M9 11h6M9 15h6"/></svg>
+    </div>
+    <div>
+      <h2>ระบบเช็คสต็อก</h2>
+      <p>ตรวจสอบสต็อกได้อย่างรวดเร็ว แม่นยำ และเป็นระบบ</p>
     </div>
   </div>
-  <button class="btn btn-primary" onclick="openExcelFile()" id="openFileBtn">📂 เปิดไฟล์</button>
-</div>
 
-<!-- ============ Readonly Banner ============ -->
-<div id="readonlyBanner" class="readonly-banner" style="display:none;">
-  👤 โหมดทั่วไป — นับสต๊อกได้ แต่ไม่สามารถเพิ่ม/แก้ไข/ลบสินค้าได้
-</div>
-
-<!-- ============ Search ============ -->
-<div class="search-bar">
-  <div class="search-wrapper">
-    <span class="icon">🔍</span>
-    <input type="text" id="searchInput" placeholder="ค้นหาชื่อสินค้า หรือ SKU...">
+  <!-- ============ Stats ============ -->
+  <div class="stats-wrap">
+    <div class="stats">
+      <div class="stat-box">
+        <div class="stat-ic">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M21 8 12 3 3 8v8l9 5 9-5V8Z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>
+        </div>
+        <div class="stat-txt">
+          <div class="label">สินค้าทั้งหมด</div>
+          <div class="num" id="statTotal">0</div>
+        </div>
+        <svg class="spark" viewBox="0 0 120 50" preserveAspectRatio="none" aria-hidden="true">
+          <defs><linearGradient id="g1" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#2563eb" stop-opacity="0.2"/><stop offset="1" stop-color="#2563eb" stop-opacity="0"/></linearGradient></defs>
+          <path d="M0 42 L20 36 L40 40 L60 26 L80 30 L100 14 L120 8 L120 50 L0 50Z" fill="url(#g1)"/>
+          <polyline points="0,42 20,36 40,40 60,26 80,30 100,14 120,8" fill="none" stroke="#2563eb" stroke-width="2"/>
+        </svg>
+      </div>
+      <div class="stat-box counted">
+        <div class="stat-ic">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 10 17 19 7"/></svg>
+        </div>
+        <div class="stat-txt">
+          <div class="label">นับแล้ว</div>
+          <div class="num" id="statCounted">0</div>
+        </div>
+        <svg class="spark" viewBox="0 0 120 50" preserveAspectRatio="none" aria-hidden="true">
+          <defs><linearGradient id="g2" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#059669" stop-opacity="0.2"/><stop offset="1" stop-color="#059669" stop-opacity="0"/></linearGradient></defs>
+          <path d="M0 40 L20 42 L40 30 L60 34 L80 22 L100 24 L120 10 L120 50 L0 50Z" fill="url(#g2)"/>
+          <polyline points="0,40 20,42 40,30 60,34 80,22 100,24 120,10" fill="none" stroke="#059669" stroke-width="2"/>
+        </svg>
+      </div>
+      <div class="stat-box diff">
+        <div class="stat-ic">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/></svg>
+        </div>
+        <div class="stat-txt">
+          <div class="label">รายการต่าง</div>
+          <div class="num" id="statDiff">0</div>
+        </div>
+        <svg class="spark" viewBox="0 0 120 50" preserveAspectRatio="none" aria-hidden="true">
+          <defs><linearGradient id="g3" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#ea580c" stop-opacity="0.2"/><stop offset="1" stop-color="#ea580c" stop-opacity="0"/></linearGradient></defs>
+          <path d="M0 44 L20 40 L40 42 L60 34 L80 36 L100 26 L120 18 L120 50 L0 50Z" fill="url(#g3)"/>
+          <polyline points="0,44 20,40 40,42 60,34 80,36 100,26 120,18" fill="none" stroke="#ea580c" stroke-width="2"/>
+        </svg>
+      </div>
+    </div>
   </div>
+
+  <!-- ============ Readonly Banner ============ -->
+  <div id="readonlyBanner" class="readonly-banner" style="display:none; margin: 20px 28px 0; border-radius: 12px;">
+    👤 โหมดทั่วไป — นับสต๊อกได้ แต่ไม่สามารถเพิ่ม/แก้ไข/ลบสินค้าได้
+  </div>
+
+  <!-- ============ Panel (file check + list) ============ -->
+  <section class="panel">
+
+    <div class="panel-head">
+      <div class="panel-title">
+        <div class="pt-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M8 13h8M8 17h5"/></svg>
+        </div>
+        <div>
+          <h3>เช็คสต็อกไฟล์</h3>
+          <p>เลือกไฟล์ Excel เพื่ออัปโหลดข้อมูลสต๊อกของคุณ</p>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="openExcelFile()" id="openFileBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 16l-4-4-4 4"/><path d="M12 12v9"/><path d="M20 16.6A5 5 0 0 0 18 7h-1.3A8 8 0 1 0 4 15.3"/></svg>
+        เปลี่ยนไฟล์
+      </button>
+    </div>
+
+    <div class="file-bar" id="fileBar">
+      <div class="file-info">
+        <div class="file-icon connected" id="fileIcon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 10 17 19 7"/></svg>
+        </div>
+        <div style="min-width:0;flex:1;">
+          <div class="file-name" id="fileName">ยังไม่ได้เชื่อมต่อไฟล์</div>
+          <div class="file-sub" id="fileSub">กรุณาเลือกไฟล์ Excel เพื่อเริ่มต้น</div>
+        </div>
+      </div>
+      <span class="file-close" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </span>
+    </div>
+
+    <!-- ============ Search ============ -->
+    <div class="search-bar">
+      <div class="search-wrapper">
+        <span class="icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        </span>
+        <input type="text" id="searchInput" placeholder="ค้นหาชื่อสินค้า หรือ SKU...">
+      </div>
+    </div>
+
+    <!-- ============ Tabs ============ -->
+    <div class="tabs">
+      <div class="tab active" data-tab="all">ทั้งหมด <span class="count-badge" id="tabCountAll">0</span></div>
+      <div class="tab" data-tab="pending">ยังไม่บันทึก <span class="count-badge" id="tabCountPending">0</span></div>
+      <div class="tab" data-tab="done">มีแล้ว <span class="count-badge" id="tabCountDone">0</span></div>
+      <div class="tab" data-tab="diff">ขาด <span class="count-badge" id="tabCountDiff">0</span></div>
+    </div>
+
+    <!-- ============ Actions (admin) ============ -->
+    <div class="actions-bar">
+      <button class="btn btn-secondary admin-only" onclick="toggleSelectMode()" disabled id="selectModeBtn">☑️ เลือกลบ</button>
+      <button class="btn btn-secondary admin-only" onclick="resetCount()" disabled>🔄 รีเซ็ต</button>
+      <button class="btn btn-danger admin-only" onclick="clearAll()" disabled>🗑️ ลบทั้งหมด</button>
+      <button class="btn btn-secondary admin-only" onclick="openChangePinModal()" disabled>🔑 เปลี่ยน PIN</button>
+    </div>
+
+    <!-- ============ Product List ============ -->
+    <div class="product-list" id="productList"></div>
+
+  </section>
 </div>
 
-<!-- ============ Tabs ============ -->
-<div class="tabs">
-  <div class="tab active" data-tab="all">ทั้งหมด <span class="count-badge" id="tabCountAll">0</span></div>
-  <div class="tab" data-tab="pending">ยังไม่นับ <span class="count-badge" id="tabCountPending">0</span></div>
-  <div class="tab" data-tab="done">นับแล้ว <span class="count-badge" id="tabCountDone">0</span></div>
-  <div class="tab" data-tab="diff">ต่าง <span class="count-badge" id="tabCountDiff">0</span></div>
-</div>
-
-<!-- ============ Actions ============ -->
-<div class="actions-bar">
-  <button class="btn btn-secondary admin-only" onclick="toggleSelectMode()" disabled id="selectModeBtn">☑️ เลือกลบ</button>
-  <button class="btn btn-secondary admin-only" onclick="resetCount()" disabled>🔄 รีเซ็ต</button>
-  <button class="btn btn-danger admin-only" onclick="clearAll()" disabled>🗑️ ลบทั้งหมด</button>
-  <button class="btn btn-secondary admin-only" onclick="openChangePinModal()" disabled>🔑 เปลี่ยน PIN</button>
-</div>
-
-<!-- ============ Product List ============ -->
-<div class="product-list" id="productList"></div>
 <button class="fab hidden" id="fabAdd" onclick="openAddModal()">+</button>
 
 <!-- ============ Save Bar ============ -->
 <div class="save-bar" id="saveBar" style="display:none;">
-  <div class="status" id="saveStatus">พร้อมบันทึก</div>
-  <button class="btn btn-success" onclick="saveToFile()" id="saveBtn">💾 บันทึก</button>
+  <div class="status" id="saveStatus">
+    <svg class="info-ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+    พร้อมบันทึก
+  </div>
+  <button class="btn btn-success" onclick="saveToFile()" id="saveBtn">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 10 17 19 7"/></svg>
+    บันทึกข้อมูล
+  </button>
 </div>
 
 <!-- ============ Selection Bar ============ -->

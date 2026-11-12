@@ -4,6 +4,8 @@
 
 // ============ State ============
 let products = [];
+let stockHistory = []; // เก็บประวัติรอบการนับ (Snapshots)
+let countLogs = [];    // เก็บประวัติการนับรายชิ้นอัตโนมัติ (Activity Logs)
 let adminPin = CONFIG.DEFAULT_PIN;
 let isAdmin = false;
 let editingId = null;
@@ -14,6 +16,13 @@ let pinCallback = null;
 let selectMode = false;
 let selectedIds = new Set();
 let pendingDeleteAction = null;
+
+// History UI State
+let historySubTab = 'sessions'; // 'sessions' | 'logs'
+let historySearchTerm = '';
+let historyDateFilter = '';
+let viewingSessionId = null;
+const logTimers = {};
 
 // File System Access API
 let fileHandle = null;
@@ -27,15 +36,23 @@ const DEFAULT_CATEGORY = 'ไม่ระบุ';
 // ============ Storage ============
 function loadData() {
   try { products = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEY) || '[]'); } catch (e) { products = []; }
+  try { stockHistory = JSON.parse(localStorage.getItem(CONFIG.HISTORY_KEY) || '[]'); } catch (e) { stockHistory = []; }
+  try { countLogs = JSON.parse(localStorage.getItem(CONFIG.LOG_KEY) || '[]'); } catch (e) { countLogs = []; }
   try { adminPin = localStorage.getItem(CONFIG.ADMIN_KEY) || CONFIG.DEFAULT_PIN; } catch (e) { adminPin = CONFIG.DEFAULT_PIN; }
   restoreFileHandle().then(() => {
     updateAdminUI();
     render();
+    renderHistoryPage();
   });
 }
 
 function saveDataToCache() {
   localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(products));
+}
+
+function saveHistoryToCache() {
+  localStorage.setItem(CONFIG.HISTORY_KEY, JSON.stringify(stockHistory));
+  localStorage.setItem(CONFIG.LOG_KEY, JSON.stringify(countLogs));
 }
 
 // ============ File System Access API ============
@@ -165,10 +182,13 @@ async function saveToFile() {
     await writable.write(wbout);
     await writable.close();
 
+    // บันทึกเข้าประวัติอัตโนมัติเมื่อกดเซฟลงไฟล์ Excel
+    createHistorySession(`บันทึกไฟล์ (${fileName || 'Excel'})`, true);
+
     const statusEl = document.getElementById('saveStatus');
     statusEl.classList.add('success');
     statusEl.textContent = '✅ บันทึกสำเร็จ ' + new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-    showToast('💾 บันทึกทับไฟล์เดิมเรียบร้อย');
+    showToast('💾 บันทึกทับไฟล์เดิมและเก็บประวัติเรียบร้อย');
     setTimeout(() => updateSaveBar(), 3000);
   } catch (err) {
     console.error(err);
@@ -208,6 +228,7 @@ function updateFileBar() {
 
 function updateSaveBar() {
   const status = document.getElementById('saveStatus');
+  if (!status) return;
   status.classList.remove('success');
   if (products.length === 0) {
     status.textContent = 'ไม่มีข้อมูล';
@@ -277,6 +298,7 @@ function genId() { return Date.now().toString(36) + Math.random().toString(36).s
 
 function showToast(msg) {
   const t = document.getElementById('toast');
+  if (!t) return;
   t.textContent = msg;
   t.classList.add('show');
   clearTimeout(t._timer);
@@ -292,6 +314,539 @@ function getDiff(p) {
   return p.counted - p.system;
 }
 
+function getStatusText(d) {
+  if (d === null || d === undefined || d === '') return 'ยังไม่นับ';
+  if (d === 0) return 'ตรง';
+  if (d < 0) return 'ขาด ' + Math.abs(d);
+  return 'เกิน ' + d;
+}
+
+function formatDateTimeTH(isoStr) {
+  if (!isoStr) return '-';
+  const d = new Date(isoStr);
+  if (isNaN(d.getTime())) return isoStr;
+  return d.toLocaleString('th-TH', {
+    year: 'numeric', month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit', second: '2-digit'
+  });
+}
+
+function getLocalDateKey(isoStr) {
+  const d = new Date(isoStr);
+  if (isNaN(d.getTime())) return '';
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+// ============ History & Count Log System ============
+
+// บันทึก Log รายชิ้นอัตโนมัติ (มี debounce กรณีกด + / - รัวๆ)
+function scheduleCountLog(product, oldVal, newVal) {
+  if (oldVal === newVal) return;
+  const pid = product.id;
+
+  if (!logTimers[pid]) {
+    logTimers[pid] = { initialOldVal: oldVal, timer: null };
+  }
+  clearTimeout(logTimers[pid].timer);
+
+  logTimers[pid].timer = setTimeout(() => {
+    const startVal = logTimers[pid].initialOldVal;
+    delete logTimers[pid];
+    if (startVal === newVal) return;
+
+    const diff = (newVal === null || newVal === '' || newVal === undefined) ? null : (newVal - product.system);
+    const entry = {
+      id: genId(),
+      timestamp: new Date().toISOString(),
+      productId: product.id,
+      name: product.name,
+      sku: product.sku || '',
+      category: (product.category || '').trim() || DEFAULT_CATEGORY,
+      system: product.system,
+      oldCounted: startVal === undefined ? null : startVal,
+      newCounted: newVal === undefined ? null : newVal,
+      diff: diff,
+      status: getStatusText(diff),
+      role: isAdmin ? 'แอดมิน' : 'ผู้ใช้งานทั่วไป'
+    };
+
+    countLogs.unshift(entry);
+    // เก็บสูงสุด 2,000 รายการล่าสุดเพื่อไม่ให้ localStorage เต็ม
+    if (countLogs.length > 2000) countLogs.length = 2000;
+    saveHistoryToCache();
+    renderHistoryPage();
+  }, 600);
+}
+
+// เปิด Modal เพื่อบันทึกรอบการนับสต๊อก
+function openSaveHistoryModal() {
+  if (products.length === 0) {
+    showToast('⚠️ ยังไม่มีรายการสินค้าให้บันทึกประวัติ');
+    return;
+  }
+  const countedCount = products.filter(p => p.counted !== null && p.counted !== '' && p.counted !== undefined).length;
+  const nowStr = new Date().toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
+  const input = document.getElementById('historyNoteInput');
+  const summaryEl = document.getElementById('historyModalSummary');
+  if (input) input.value = `รอบเช็คสต๊อก ${nowStr}`;
+  if (summaryEl) {
+    summaryEl.textContent = `นับแล้ว ${countedCount} จากทั้งหมด ${products.length} รายการ`;
+  }
+  document.getElementById('saveHistoryModal').classList.add('show');
+  setTimeout(() => { if (input) input.select(); }, 150);
+}
+
+function confirmSaveHistorySession() {
+  const input = document.getElementById('historyNoteInput');
+  const note = (input && input.value.trim()) || `รอบเช็คสต๊อก ${new Date().toLocaleString('th-TH')}`;
+  closeModal('saveHistoryModal');
+  createHistorySession(note, false);
+}
+
+function createHistorySession(note, silent = false) {
+  if (products.length === 0) return null;
+
+  const now = new Date().toISOString();
+  const items = products.map(p => {
+    const d = getDiff(p);
+    return {
+      id: p.id,
+      name: p.name,
+      sku: p.sku || '',
+      category: (p.category || '').trim() || DEFAULT_CATEGORY,
+      system: p.system,
+      counted: (p.counted === null || p.counted === undefined || p.counted === '') ? null : p.counted,
+      diff: d,
+      status: getStatusText(d)
+    };
+  });
+
+  const total = items.length;
+  const counted = items.filter(i => i.counted !== null).length;
+  const ok = items.filter(i => i.diff === 0).length;
+  const short = items.filter(i => i.diff !== null && i.diff < 0).length;
+  const over = items.filter(i => i.diff !== null && i.diff > 0).length;
+
+  const session = {
+    id: genId(),
+    timestamp: now,
+    note: note || 'เช็คสต๊อก',
+    fileName: fileName || 'ข้อมูลในระบบ',
+    role: isAdmin ? 'แอดมิน' : 'ผู้ใช้งานทั่วไป',
+    summary: { total, counted, ok, short, over },
+    items: items
+  };
+
+  stockHistory.unshift(session);
+  if (stockHistory.length > 200) stockHistory.length = 200;
+  saveHistoryToCache();
+  renderHistoryPage();
+
+  if (!silent) {
+    showToast('✅ บันทึกประวัติรอบการนับเรียบร้อย');
+  }
+  return session;
+}
+
+// ดูรายละเอียดรอบการนับย้อนหลัง
+function viewHistorySession(sessionId) {
+  const s = stockHistory.find(x => x.id === sessionId);
+  if (!s) return;
+  viewingSessionId = sessionId;
+
+  document.getElementById('hdTitle').textContent = s.note;
+  document.getElementById('hdMeta').textContent = `🕒 ${formatDateTimeTH(s.timestamp)} • 📄 ${s.fileName || '-'} • 👤 ${s.role || '-'}`;
+  document.getElementById('hdTotal').textContent = s.summary.total;
+  document.getElementById('hdCounted').textContent = s.summary.counted;
+  document.getElementById('hdOk').textContent = s.summary.ok;
+  document.getElementById('hdShort').textContent = s.summary.short;
+  document.getElementById('hdOver').textContent = s.summary.over;
+
+  const tbody = document.getElementById('hdBody');
+  tbody.innerHTML = s.items.map((item, idx) => {
+    let badgeClass = 'plain';
+    if (item.diff === 0) badgeClass = 'ok';
+    else if (item.diff !== null && item.diff < 0) badgeClass = 'short';
+    else if (item.diff !== null && item.diff > 0) badgeClass = 'over';
+
+    const diffStr = item.diff === null ? '-' : (item.diff > 0 ? `+${item.diff}` : `${item.diff}`);
+    return `
+      <tr>
+        <td>${idx + 1}</td>
+        <td><strong>${escapeHtml(item.name)}</strong></td>
+        <td>${escapeHtml(item.category || DEFAULT_CATEGORY)}</td>
+        <td>${escapeHtml(item.sku || '-')}</td>
+        <td class="num">${item.system}</td>
+        <td class="num">${item.counted === null ? '-' : item.counted}</td>
+        <td class="num">${diffStr}</td>
+        <td><span class="st ${badgeClass}">${escapeHtml(item.status)}</span></td>
+      </tr>
+    `;
+  }).join('');
+
+  document.getElementById('historyDetailModal').classList.add('show');
+}
+
+// โหลดข้อมูลจากประวัติรอบนั้นกลับมาที่หน้าเช็คสต็อก (เฉพาะแอดมิน)
+function restoreHistorySession(sessionId) {
+  requireAdmin(() => {
+    const s = stockHistory.find(x => x.id === sessionId);
+    if (!s) return;
+    if (!confirm(`ต้องการนำข้อมูลจาก "${s.note}" (${formatDateTimeTH(s.timestamp)}) กลับมาใช้ในหน้าเช็คสต็อกปัจจุบันหรือไม่?`)) return;
+
+    products = s.items.map(item => ({
+      id: item.id || genId(),
+      name: item.name,
+      sku: item.sku === '-' ? '' : item.sku,
+      category: item.category === DEFAULT_CATEGORY ? '' : item.category,
+      system: item.system,
+      counted: item.counted
+    }));
+
+    saveDataToCache();
+    render();
+    closeModal('historyDetailModal');
+    showToast('🔄 นำข้อมูลจากประวัติกลับมาใช้แล้ว');
+    if (typeof window.go === 'function') window.go('check');
+  });
+}
+
+function deleteHistorySession(sessionId) {
+  requireAdmin(() => {
+    const s = stockHistory.find(x => x.id === sessionId);
+    if (!s) return;
+    pendingDeleteAction = () => {
+      stockHistory = stockHistory.filter(x => x.id !== sessionId);
+      saveHistoryToCache();
+      renderHistoryPage();
+      showToast('🗑️ ลบประวัติรอบการนับแล้ว');
+    };
+    showConfirmDelete('🗑️ ลบประวัติรอบการนับ', `ต้องการลบประวัติ "${s.note}" หรือไม่?`);
+  });
+}
+
+function clearAllHistory() {
+  requireAdmin(() => {
+    if (stockHistory.length === 0 && countLogs.length === 0) {
+      showToast('ไม่มีประวัติให้ลบ');
+      return;
+    }
+    pendingDeleteAction = () => {
+      stockHistory = [];
+      countLogs = [];
+      saveHistoryToCache();
+      renderHistoryPage();
+      showToast('🗑️ ล้างประวัติทั้งหมดแล้ว');
+    };
+    showConfirmDelete('🗑️ ล้างประวัติทั้งหมด', 'ต้องการลบประวัติรอบการนับและประวัติรายชิ้นทั้งหมดหรือไม่? (ไม่สามารถกู้คืนได้)');
+  });
+}
+
+// สลับแท็บในหน้าประวัติ
+function switchHistorySubTab(tabName) {
+  historySubTab = tabName;
+  document.querySelectorAll('.hist-subtab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.subtab === tabName);
+  });
+  renderHistoryPage();
+}
+
+// แสดงผลหน้าประวัติการนับ (#history)
+function renderHistoryPage() {
+  const statSessionsEl = document.getElementById('histStatSessions');
+  const statLogsEl = document.getElementById('histStatLogs');
+  const statLastEl = document.getElementById('histStatLast');
+  const badgeSessions = document.getElementById('histBadgeSessions');
+  const badgeLogs = document.getElementById('histBadgeLogs');
+
+  if (statSessionsEl) statSessionsEl.textContent = stockHistory.length;
+  if (statLogsEl) statLogsEl.textContent = countLogs.length;
+  if (badgeSessions) badgeSessions.textContent = stockHistory.length;
+  if (badgeLogs) badgeLogs.textContent = countLogs.length;
+
+  if (statLastEl) {
+    const latestTime = (stockHistory[0] && stockHistory[0].timestamp) || (countLogs[0] && countLogs[0].timestamp);
+    statLastEl.textContent = latestTime ? formatDateTimeTH(latestTime) : 'ยังไม่มีประวัติ';
+  }
+
+  const sessionsWrap = document.getElementById('histSessionsWrap');
+  const logsWrap = document.getElementById('histLogsWrap');
+  if (!sessionsWrap || !logsWrap) return;
+
+  const q = historySearchTerm.trim().toLowerCase();
+  const dateFilter = historyDateFilter;
+
+  if (historySubTab === 'sessions') {
+    sessionsWrap.style.display = 'block';
+    logsWrap.style.display = 'none';
+
+    let list = stockHistory;
+    if (dateFilter) {
+      list = list.filter(s => getLocalDateKey(s.timestamp) === dateFilter);
+    }
+    if (q) {
+      list = list.filter(s =>
+        (s.note || '').toLowerCase().includes(q) ||
+        (s.fileName || '').toLowerCase().includes(q) ||
+        (s.items || []).some(i =>
+          (i.name || '').toLowerCase().includes(q) ||
+          (i.sku || '').toLowerCase().includes(q) ||
+          (i.category || '').toLowerCase().includes(q)
+        )
+      );
+    }
+
+    if (list.length === 0) {
+      sessionsWrap.innerHTML = `
+        <div class="rpt-empty">
+          <div style="font-size:32px;margin-bottom:8px;">🕒</div>
+          <div style="font-weight:600;color:#0f1d36;margin-bottom:4px;">ยังไม่มีประวัติรอบการนับสต๊อก</div>
+          <div>กดปุ่ม <strong>"📌 บันทึกรอบการนับปัจจุบัน"</strong> ด้านบน หรือกดบันทึกไฟล์ในหน้าเช็คสต็อกเพื่อเก็บประวัติ</div>
+        </div>
+      `;
+      return;
+    }
+
+    sessionsWrap.innerHTML = `<div class="history-card-list">` + list.map(s => `
+      <div class="history-card">
+        <div class="hc-main">
+          <div class="hc-title-row">
+            <h4 class="hc-title">${escapeHtml(s.note)}</h4>
+            <span class="hc-time">🕒 ${formatDateTimeTH(s.timestamp)}</span>
+          </div>
+          <div class="hc-sub">
+            <span>📄 ไฟล์: ${escapeHtml(s.fileName || '-')}</span>
+            <span>👤 โดย: ${escapeHtml(s.role || 'ผู้ใช้งาน')}</span>
+          </div>
+          <div class="hc-pills">
+            <span class="hc-pill">ทั้งหมด <strong>${s.summary.total}</strong></span>
+            <span class="hc-pill info">นับแล้ว <strong>${s.summary.counted}</strong></span>
+            <span class="hc-pill ok">ครบ <strong>${s.summary.ok}</strong></span>
+            <span class="hc-pill short">ขาด <strong>${s.summary.short}</strong></span>
+            <span class="hc-pill over">เกิน <strong>${s.summary.over}</strong></span>
+          </div>
+        </div>
+        <div class="hc-actions">
+          <button class="btn btn-primary" onclick="viewHistorySession('${s.id}')">👁️ ดูย้อนหลัง</button>
+          <button class="btn btn-secondary" onclick="exportSingleSessionToExcel('${s.id}')">📥 Excel</button>
+          ${isAdmin ? `<button class="btn btn-danger" onclick="deleteHistorySession('${s.id}')" title="ลบ">🗑️</button>` : ''}
+        </div>
+      </div>
+    `).join('') + `</div>`;
+  } else {
+    sessionsWrap.style.display = 'none';
+    logsWrap.style.display = 'block';
+
+    let logs = countLogs;
+    if (dateFilter) {
+      logs = logs.filter(l => getLocalDateKey(l.timestamp) === dateFilter);
+    }
+    if (q) {
+      logs = logs.filter(l =>
+        (l.name || '').toLowerCase().includes(q) ||
+        (l.sku || '').toLowerCase().includes(q) ||
+        (l.category || '').toLowerCase().includes(q) ||
+        (l.status || '').toLowerCase().includes(q)
+      );
+    }
+
+    const logBody = document.getElementById('histLogBody');
+    const logEmpty = document.getElementById('histLogEmpty');
+    const logTableWrap = document.getElementById('histLogTableWrap');
+
+    if (logs.length === 0) {
+      logEmpty.style.display = 'block';
+      logTableWrap.style.display = 'none';
+      logBody.innerHTML = '';
+      return;
+    }
+
+    logEmpty.style.display = 'none';
+    logTableWrap.style.display = 'block';
+
+    logBody.innerHTML = logs.map(l => {
+      let badgeClass = 'plain';
+      if (l.diff === 0) badgeClass = 'ok';
+      else if (l.diff !== null && l.diff < 0) badgeClass = 'short';
+      else if (l.diff !== null && l.diff > 0) badgeClass = 'over';
+
+      const oldTxt = (l.oldCounted === null || l.oldCounted === undefined || l.oldCounted === '') ? 'ยังไม่นับ' : l.oldCounted;
+      const newTxt = (l.newCounted === null || l.newCounted === undefined || l.newCounted === '') ? 'ยังไม่นับ' : l.newCounted;
+      const diffTxt = l.diff === null ? '-' : (l.diff > 0 ? `+${l.diff}` : `${l.diff}`);
+
+      return `
+        <tr>
+          <td style="white-space:nowrap;">${formatDateTimeTH(l.timestamp)}</td>
+          <td><strong>${escapeHtml(l.name)}</strong></td>
+          <td>${escapeHtml(l.category || DEFAULT_CATEGORY)}</td>
+          <td>${escapeHtml(l.sku || '-')}</td>
+          <td class="num">${l.system}</td>
+          <td class="num" style="color:#64748b;">${oldTxt}</td>
+          <td class="num"><strong>${newTxt}</strong></td>
+          <td class="num">${diffTxt}</td>
+          <td><span class="st ${badgeClass}">${escapeHtml(l.status)}</span></td>
+        </tr>
+      `;
+    }).join('');
+  }
+}
+
+// ============ Excel Export Functions (.xlsx) ============
+
+// เซฟประวัติทั้งหมดเป็นไฟล์ Excel (.xlsx) ครบทุกชีต
+function exportAllHistoryToExcel() {
+  if (stockHistory.length === 0 && countLogs.length === 0) {
+    showToast('⚠️ ยังไม่มีข้อมูลประวัติสำหรับส่งออกเป็น Excel');
+    return;
+  }
+
+  try {
+    const wb = XLSX.utils.book_new();
+
+    // 1. ชีตสรุปรอบการนับทั้งหมด
+    const summaryData = stockHistory.map((s, idx) => ({
+      'ลำดับ': idx + 1,
+      'วันที่-เวลา': formatDateTimeTH(s.timestamp),
+      'ชื่อรอบการนับ / หมายเหตุ': s.note,
+      'ไฟล์อ้างอิง': s.fileName || '-',
+      'ผู้บันทึก': s.role || '-',
+      'สินค้าทั้งหมด': s.summary.total,
+      'นับแล้ว': s.summary.counted,
+      'ยังไม่ได้นับ': s.summary.total - s.summary.counted,
+      'ครบ (ตรง)': s.summary.ok,
+      'ขาด': s.summary.short,
+      'เกิน': s.summary.over
+    }));
+    const wsSummary = XLSX.utils.json_to_sheet(
+      summaryData.length ? summaryData : [{ 'ข้อความ': 'ยังไม่มีประวัติรอบการนับ' }]
+    );
+    XLSX.utils.book_append_sheet(wb, wsSummary, 'สรุปรอบการนับ');
+
+    // 2. ชีตรายละเอียดสินค้าทุกรอบการนับรวมกัน
+    const allSessionItems = [];
+    stockHistory.forEach((s) => {
+      (s.items || []).forEach((item) => {
+        allSessionItems.push({
+          'วันที่-เวลา': formatDateTimeTH(s.timestamp),
+          'ชื่อรอบการนับ': s.note,
+          'ID สินค้า': item.id,
+          'ชื่อสินค้า': item.name,
+          'หมวดหมู่': item.category || DEFAULT_CATEGORY,
+          'SKU': item.sku || '',
+          'ในระบบ': item.system,
+          'นับได้': item.counted === null ? '' : item.counted,
+          'ผลต่าง': item.diff === null ? '' : item.diff,
+          'สถานะ': item.status
+        });
+      });
+    });
+    const wsDetails = XLSX.utils.json_to_sheet(
+      allSessionItems.length ? allSessionItems : [{ 'ข้อความ': 'ยังไม่มีรายละเอียดรอบการนับ' }]
+    );
+    XLSX.utils.book_append_sheet(wb, wsDetails, 'รายละเอียดทุกรอบ');
+
+    // 3. ชีตประวัติการนับรายชิ้นตามเวลาจริง (Activity Logs)
+    const logSheetData = countLogs.map((l, idx) => ({
+      'ลำดับ': idx + 1,
+      'วัน-เวลาที่นับ': formatDateTimeTH(l.timestamp),
+      'ชื่อสินค้า': l.name,
+      'หมวดหมู่': l.category || DEFAULT_CATEGORY,
+      'SKU': l.sku || '',
+      'ในระบบ': l.system,
+      'ค่าเดิม': (l.oldCounted === null || l.oldCounted === undefined || l.oldCounted === '') ? 'ยังไม่นับ' : l.oldCounted,
+      'นับได้ใหม่': (l.newCounted === null || l.newCounted === undefined || l.newCounted === '') ? 'ยังไม่นับ' : l.newCounted,
+      'ผลต่าง': l.diff === null ? '' : l.diff,
+      'สถานะ': l.status,
+      'ผู้ทำรายการ': l.role || '-'
+    }));
+    const wsLogs = XLSX.utils.json_to_sheet(
+      logSheetData.length ? logSheetData : [{ 'ข้อความ': 'ยังไม่มีประวัติการนับรายชิ้น' }]
+    );
+    XLSX.utils.book_append_sheet(wb, wsLogs, 'Log_การนับรายชิ้น');
+
+    const now = new Date();
+    const stamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+    XLSX.writeFile(wb, `StockFlow_History_${stamp}.xlsx`);
+    showToast('📥 ดาวน์โหลดไฟล์ Excel ประวัติทั้งหมดเรียบร้อย');
+  } catch (err) {
+    console.error(err);
+    alert('เกิดข้อผิดพลาดในการสร้างไฟล์ Excel: ' + err.message);
+  }
+}
+
+// เซฟเฉพาะรอบการนับที่เลือกเป็นไฟล์ Excel (.xlsx)
+function exportSingleSessionToExcel(sessionId) {
+  const targetId = sessionId || viewingSessionId;
+  const s = stockHistory.find(x => x.id === targetId);
+  if (!s) {
+    showToast('ไม่พบรอบการนับที่ต้องการส่งออก');
+    return;
+  }
+
+  try {
+    const wb = XLSX.utils.book_new();
+    const rows = s.items.map((item, idx) => ({
+      'ลำดับ': idx + 1,
+      'ID': item.id,
+      'ชื่อสินค้า': item.name,
+      'หมวดหมู่': item.category || DEFAULT_CATEGORY,
+      'SKU': item.sku || '',
+      'ในระบบ': item.system,
+      'นับได้': item.counted === null ? '' : item.counted,
+      'ผลต่าง': item.diff === null ? '' : item.diff,
+      'สถานะ': item.status,
+      'รอบการนับ': s.note,
+      'วันที่บันทึก': formatDateTimeTH(s.timestamp)
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    XLSX.utils.book_append_sheet(wb, ws, 'ประวัติการนับ');
+
+    const d = new Date(s.timestamp);
+    const stamp = isNaN(d.getTime())
+      ? Date.now()
+      : `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}_${String(d.getHours()).padStart(2, '0')}${String(d.getMinutes()).padStart(2, '0')}`;
+    XLSX.writeFile(wb, `StockFlow_Session_${stamp}.xlsx`);
+    showToast('📥 ดาวน์โหลดไฟล์ Excel รอบการนับเรียบร้อย');
+  } catch (err) {
+    console.error(err);
+    alert('ไม่สามารถส่งออกไฟล์ Excel ได้: ' + err.message);
+  }
+}
+
+// ส่งออกข้อมูลสต๊อกปัจจุบันเป็น Excel (.xlsx) จากหน้ารายงาน
+function exportCurrentStockToExcel() {
+  if (products.length === 0) {
+    showToast('ยังไม่มีข้อมูลให้ส่งออก');
+    return;
+  }
+  const c = CONFIG.EXCEL_COLUMNS;
+  const exportData = products.map(p => {
+    const d = getDiff(p);
+    return {
+      [c.ID]: p.id,
+      [c.NAME]: p.name,
+      [CAT_COL]: (p.category || '').trim() || DEFAULT_CATEGORY,
+      [c.SKU]: p.sku || '',
+      [c.SYSTEM]: p.system,
+      [c.COUNTED]: (p.counted === null || p.counted === '') ? '' : p.counted,
+      [c.DIFF]: d === null ? '' : d,
+      [c.STATUS]: getStatusText(d),
+      [c.UPDATED_AT]: new Date().toLocaleString('th-TH')
+    };
+  });
+  const ws = XLSX.utils.json_to_sheet(exportData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, CONFIG.SHEET_NAME);
+  const now = new Date();
+  const stamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+  XLSX.writeFile(wb, `StockFlow_Report_${stamp}.xlsx`);
+  showToast('📥 ส่งออกรายงาน Excel เรียบร้อย');
+}
+
 // ============ Admin ============
 function updateAdminUI() {
   const badge = document.getElementById('adminBadge');
@@ -300,6 +855,7 @@ function updateAdminUI() {
   const banner = document.getElementById('readonlyBanner');
   const fab = document.getElementById('fabAdd');
   const adminBtns = document.querySelectorAll('.admin-only');
+  const restoreBtn = document.getElementById('hdRestoreBtn');
 
   if (isAdmin) {
     badge.classList.add('unlocked');
@@ -308,6 +864,7 @@ function updateAdminUI() {
     banner.style.display = 'none';
     fab.classList.remove('hidden');
     adminBtns.forEach(b => b.disabled = false);
+    if (restoreBtn) restoreBtn.style.display = 'inline-flex';
   } else {
     badge.classList.remove('unlocked');
     text.textContent = 'โหมดทั่วไป';
@@ -315,6 +872,7 @@ function updateAdminUI() {
     banner.style.display = 'block';
     fab.classList.add('hidden');
     adminBtns.forEach(b => b.disabled = true);
+    if (restoreBtn) restoreBtn.style.display = 'none';
     if (selectMode) exitSelectMode();
   }
 }
@@ -325,6 +883,7 @@ function handleAdminClick() {
       isAdmin = false;
       updateAdminUI();
       render();
+      renderHistoryPage();
       showToast('ออกจากโหมดแอดมินแล้ว');
     }
   } else {
@@ -370,6 +929,7 @@ function checkPin() {
       isAdmin = true;
       updateAdminUI();
       render();
+      renderHistoryPage();
       showToast('✅ เข้าสู่โหมดแอดมินแล้ว');
     }
     pinBuffer = '';
@@ -462,7 +1022,6 @@ function renderList() {
       }
     }
     const isSelected = selectedIds.has(p.id);
-    const cat = (p.category || '').trim() || DEFAULT_CATEGORY;
     return `
       <div class="product-card ${cardClass} ${isSelected ? 'selected' : ''}"
            data-id="${p.id}" data-category="${escapeHtml(p.category || '')}"
@@ -596,9 +1155,11 @@ function confirmDeleteExecute() {
 function changeCount(id, delta) {
   const p = products.find(x => x.id === id);
   if (!p) return;
-  let cur = (p.counted === null || p.counted === undefined || p.counted === '') ? 0 : parseInt(p.counted);
+  const oldVal = (p.counted === null || p.counted === undefined || p.counted === '') ? null : parseInt(p.counted);
+  let cur = oldVal === null ? 0 : oldVal;
   cur = Math.max(0, cur + delta);
   p.counted = cur;
+  scheduleCountLog(p, oldVal, cur);
   saveDataToCache();
   render();
 }
@@ -606,11 +1167,14 @@ function changeCount(id, delta) {
 function setCount(id, val) {
   const p = products.find(x => x.id === id);
   if (!p) return;
-  if (val === '' || val === null) p.counted = null;
-  else {
+  const oldVal = (p.counted === null || p.counted === undefined || p.counted === '') ? null : parseInt(p.counted);
+  let newVal = null;
+  if (val !== '' && val !== null) {
     const n = parseInt(val);
-    p.counted = isNaN(n) ? null : Math.max(0, n);
+    newVal = isNaN(n) ? null : Math.max(0, n);
   }
+  p.counted = newVal;
+  scheduleCountLog(p, oldVal, newVal);
   saveDataToCache();
   render();
 }
@@ -674,11 +1238,15 @@ function saveProduct() {
 
 function resetCount() {
   requireAdmin(() => {
-    if (!confirm('ต้องการรีเซ็ตตัวเลขที่นับได้ทั้งหมดหรือไม่?')) return;
+    const hasCounted = products.some(p => p.counted !== null && p.counted !== undefined && p.counted !== '');
+    if (!confirm('ต้องการรีเซ็ตตัวเลขที่นับได้ทั้งหมดหรือไม่?\n(ระบบจะบันทึกประวัติรอบการนับปัจจุบันไว้ให้อัตโนมัติก่อนรีเซ็ต)')) return;
+    if (hasCounted) {
+      createHistorySession('บันทึกอัตโนมัติก่อนรีเซ็ตการนับ', true);
+    }
     products.forEach(p => p.counted = null);
     saveDataToCache();
     render();
-    showToast('🔄 รีเซ็ตการนับแล้ว');
+    showToast('🔄 บันทึกประวัติและรีเซ็ตการนับแล้ว');
   });
 }
 
@@ -718,7 +1286,8 @@ function changePin() {
 
 // ============ Modal Helpers ============
 function closeModal(id) {
-  document.getElementById(id).classList.remove('show');
+  const el = document.getElementById(id);
+  if (el) el.classList.remove('show');
 }
 
 // ============ Events ============
@@ -743,6 +1312,22 @@ function setupEvents() {
     searchTerm = e.target.value;
     renderList();
   });
+
+  // History Search & Date Filter
+  const histSearch = document.getElementById('historySearchInput');
+  if (histSearch) {
+    histSearch.addEventListener('input', e => {
+      historySearchTerm = e.target.value;
+      renderHistoryPage();
+    });
+  }
+  const histDate = document.getElementById('historyDateFilter');
+  if (histDate) {
+    histDate.addEventListener('change', e => {
+      historyDateFilter = e.target.value;
+      renderHistoryPage();
+    });
+  }
 
   // PIN keyboard
   document.addEventListener('keydown', e => {

@@ -862,14 +862,20 @@
       <input type="text" id="inputName" placeholder="เช่น น้ำดื่ม 600ml">
     </div>
     <div class="form-group">
-      <label>SKU / รหัสสินค้า</label>
-      <input type="text" id="inputSku" placeholder="เช่น SKU001">
-    </div>
-    <div class="form-group">
       <label>หมวดหมู่</label>
-      <input type="text" id="inputCategory" placeholder="เช่น ของกิน" list="catList">
-      <datalist id="catList"></datalist>
+      <select id="inputCategory" class="modal-select">
+        <option value="">— เลือกหมวดหมู่ —</option>
+        <option value="ของใช้">ของใช้</option>
+        <option value="ของกิน">ของกิน</option>
+      </select>
     </div>
+    <style>
+      .modal-select {
+        width: 100%; padding: 12px 14px; font: inherit; font-size: 15px;
+        border: 1px solid #cbd5e1; border-radius: 10px; background: #fff; color: inherit;
+      }
+      .modal-select:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.15); }
+    </style>
     <div class="form-group">
       <label>จำนวนในระบบ *</label>
       <input type="number" id="inputSystem" placeholder="0" min="0" inputmode="numeric">

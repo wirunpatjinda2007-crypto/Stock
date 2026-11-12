@@ -1,199 +1,108 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#0f172a">
-<title>StockFlow — ระบบจัดการสต๊อก</title>
-
-<!-- Fonts -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-<!-- SheetJS -->
-<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
-
-<!-- Styles -->
-<link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ฟอร์มกรอกข้อมูล</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      max-width: 500px;
+      margin: auto;
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      box-sizing: border-box;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    button {
+      margin-top: 20px;
+      width: 100%;
+      padding: 12px;
+      background: #1a73e8;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+    button:disabled {
+      background: #999;
+    }
+    #status {
+      margin-top: 15px;
+      text-align: center;
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
 
-<!-- ============ Header ============ -->
-<header>
-  <div class="header-top">
-    <div class="brand">
-      <div class="brand-logo">📦</div>
-      <div class="brand-text">
-        <h1>StockFlow</h1>
-        <p>ระบบจัดการสต๊อก</p>
-      </div>
-    </div>
-    <div class="admin-badge" id="adminBadge" onclick="handleAdminClick()">
-      <span id="adminIcon">🔓</span>
-      <span id="adminText">โหมดทั่วไป</span>
-    </div>
-  </div>
-  <div class="stats">
-    <div class="stat-box">
-      <div class="label">สินค้าทั้งหมด</div>
-      <div class="num" id="statTotal">0</div>
-    </div>
-    <div class="stat-box counted">
-      <div class="label">นับแล้ว</div>
-      <div class="num" id="statCounted">0</div>
-    </div>
-    <div class="stat-box diff">
-      <div class="label">รายการต่าง</div>
-      <div class="num" id="statDiff">0</div>
-    </div>
-  </div>
-</header>
+  <h2>กรอกข้อมูล</h2>
 
-<!-- ============ File Bar ============ -->
-<div class="file-bar" id="fileBar">
-  <div class="file-info">
-    <div class="file-icon" id="fileIcon">📄</div>
-    <div style="min-width:0;flex:1;">
-      <div class="file-name" id="fileName">ยังไม่ได้เชื่อมต่อไฟล์</div>
-      <div class="file-sub" id="fileSub">กรุณาเลือกไฟล์ Excel เพื่อเริ่มต้น</div>
-    </div>
-  </div>
-  <button class="btn btn-primary" onclick="openExcelFile()" id="openFileBtn">📂 เปิดไฟล์</button>
-</div>
+  <form id="myForm">
+    <label for="name">ชื่อ</label>
+    <input type="text" id="name" name="Name" required>
 
-<!-- ============ Readonly Banner ============ -->
-<div id="readonlyBanner" class="readonly-banner" style="display:none;">
-  👤 โหมดทั่วไป — นับสต๊อกได้ แต่ไม่สามารถเพิ่ม/แก้ไข/ลบสินค้าได้
-</div>
+    <label for="email">อีเมล</label>
+    <input type="email" id="email" name="Email" required>
 
-<!-- ============ Search ============ -->
-<div class="search-bar">
-  <div class="search-wrapper">
-    <span class="icon">🔍</span>
-    <input type="text" id="searchInput" placeholder="ค้นหาชื่อสินค้า หรือ SKU...">
-  </div>
-</div>
+    <label for="message">ข้อความ</label>
+    <textarea id="message" name="Message" rows="4" required></textarea>
 
-<!-- ============ Tabs ============ -->
-<div class="tabs">
-  <div class="tab active" data-tab="all">ทั้งหมด <span class="count-badge" id="tabCountAll">0</span></div>
-  <div class="tab" data-tab="pending">ยังไม่นับ <span class="count-badge" id="tabCountPending">0</span></div>
-  <div class="tab" data-tab="done">นับแล้ว <span class="count-badge" id="tabCountDone">0</span></div>
-  <div class="tab" data-tab="diff">ต่าง <span class="count-badge" id="tabCountDiff">0</span></div>
-</div>
+    <button type="submit" id="submitBtn">ส่งข้อมูล</button>
+  </form>
 
-<!-- ============ Actions ============ -->
-<div class="actions-bar">
-  <button class="btn btn-secondary admin-only" onclick="toggleSelectMode()" disabled id="selectModeBtn">☑️ เลือกลบ</button>
-  <button class="btn btn-secondary admin-only" onclick="resetCount()" disabled>🔄 รีเซ็ต</button>
-  <button class="btn btn-danger admin-only" onclick="clearAll()" disabled>🗑️ ลบทั้งหมด</button>
-  <button class="btn btn-secondary admin-only" onclick="openChangePinModal()" disabled>🔑 เปลี่ยน PIN</button>
-</div>
+  <div id="status"></div>
 
-<!-- ============ Product List ============ -->
-<div class="product-list" id="productList"></div>
-<button class="fab hidden" id="fabAdd" onclick="openAddModal()">+</button>
+  <script>
+    // ==== ใส่ URL ของ Google Apps Script Web App ที่นี่ ====
+    const SCRIPT_URL = "https://script.google.com/macros/s/XXXXXXXXXXXX/exec";
 
-<!-- ============ Save Bar ============ -->
-<div class="save-bar" id="saveBar" style="display:none;">
-  <div class="status" id="saveStatus">พร้อมบันทึก</div>
-  <button class="btn btn-success" onclick="saveToFile()" id="saveBtn">💾 บันทึก</button>
-</div>
+    const form = document.getElementById("myForm");
+    const statusDiv = document.getElementById("status");
+    const submitBtn = document.getElementById("submitBtn");
 
-<!-- ============ Selection Bar ============ -->
-<div class="selection-bar" id="selectionBar">
-  <div class="count">เลือกแล้ว <strong id="selectedCount">0</strong> รายการ</div>
-  <button class="btn btn-secondary" onclick="toggleSelectMode()">ยกเลิก</button>
-  <button class="btn btn-danger" onclick="deleteSelected()" id="deleteSelectedBtn" disabled>🗑️ ลบ</button>
-</div>
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
 
-<!-- ============ Product Modal ============ -->
-<div class="modal" id="productModal">
-  <div class="modal-content">
-    <div class="modal-handle"></div>
-    <h2 id="modalTitle">เพิ่มสินค้า</h2>
-    <div class="form-group">
-      <label>ชื่อสินค้า *</label>
-      <input type="text" id="inputName" placeholder="เช่น น้ำดื่ม 600ml">
-    </div>
-    <div class="form-group">
-      <label>SKU / รหัสสินค้า</label>
-      <input type="text" id="inputSku" placeholder="เช่น SKU001">
-    </div>
-    <div class="form-group">
-      <label>จำนวนในระบบ *</label>
-      <input type="number" id="inputSystem" placeholder="0" min="0" inputmode="numeric">
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="closeModal('productModal')">ยกเลิก</button>
-      <button class="btn btn-primary" onclick="saveProduct()">บันทึก</button>
-    </div>
-  </div>
-</div>
+      statusDiv.textContent = "กำลังส่งข้อมูล...";
+      statusDiv.style.color = "#333";
+      submitBtn.disabled = true;
 
-<!-- ============ PIN Modal ============ -->
-<div class="modal" id="pinModal">
-  <div class="modal-content" style="max-width:380px">
-    <div class="modal-handle"></div>
-    <h2 id="pinTitle" style="text-align:center">🔐 เข้าสู่โหมดแอดมิน</h2>
-    <div class="admin-note">ใส่รหัส PIN 4 หลัก</div>
-    <div class="pin-display" id="pinDisplay">
-      <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
-    </div>
-    <div class="pin-pad" id="pinPad">
-      <button class="pin-btn" onclick="pinInput('1')">1</button>
-      <button class="pin-btn" onclick="pinInput('2')">2</button>
-      <button class="pin-btn" onclick="pinInput('3')">3</button>
-      <button class="pin-btn" onclick="pinInput('4')">4</button>
-      <button class="pin-btn" onclick="pinInput('5')">5</button>
-      <button class="pin-btn" onclick="pinInput('6')">6</button>
-      <button class="pin-btn" onclick="pinInput('7')">7</button>
-      <button class="pin-btn" onclick="pinInput('8')">8</button>
-      <button class="pin-btn" onclick="pinInput('9')">9</button>
-      <button class="pin-btn action" onclick="closeModal('pinModal')">ยกเลิก</button>
-      <button class="pin-btn" onclick="pinInput('0')">0</button>
-      <button class="pin-btn action" onclick="pinBackspace()">⌫</button>
-    </div>
-    <div class="pin-error" id="pinError"></div>
-  </div>
-</div>
+      // สร้าง FormData จากฟอร์ม (ชื่อ field ต้องตรงกับหัวตารางใน Sheet)
+      const formData = new FormData(form);
 
-<!-- ============ Change PIN Modal ============ -->
-<div class="modal" id="changePinModal">
-  <div class="modal-content" style="max-width:420px">
-    <div class="modal-handle"></div>
-    <h2>🔑 เปลี่ยน PIN</h2>
-    <div class="form-group"><label>PIN เดิม</label><input type="password" id="oldPin" placeholder="••••" maxlength="4" inputmode="numeric"></div>
-    <div class="form-group"><label>PIN ใหม่ (4 หลัก)</label><input type="password" id="newPin" placeholder="••••" maxlength="4" inputmode="numeric"></div>
-    <div class="form-group"><label>ยืนยัน PIN ใหม่</label><input type="password" id="confirmPin" placeholder="••••" maxlength="4" inputmode="numeric"></div>
-    <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="closeModal('changePinModal')">ยกเลิก</button>
-      <button class="btn btn-primary" onclick="changePin()">บันทึก</button>
-    </div>
-  </div>
-</div>
-
-<!-- ============ Confirm Delete Modal ============ -->
-<div class="modal" id="confirmDeleteModal">
-  <div class="modal-content" style="max-width:420px">
-    <div class="modal-handle"></div>
-    <h2 id="confirmDeleteTitle">🗑️ ยืนยันการลบ</h2>
-    <p id="confirmDeleteText" style="color: var(--slate-500); margin: 0 0 20px; font-size: 14px; line-height: 1.6;"></p>
-    <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="closeModal('confirmDeleteModal')">ยกเลิก</button>
-      <button class="btn btn-danger" onclick="confirmDeleteExecute()" style="background: var(--danger); color: white; border-color: transparent;">ลบเลย</button>
-    </div>
-  </div>
-</div>
-
-<div class="toast" id="toast"></div>
-
-<!-- ============ Scripts ============ -->
-<script src="config.js"></script>
-<script src="app.js"></script>
+      fetch(SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",       // จำเป็นสำหรับ Apps Script
+        body: formData
+      })
+        .then(() => {
+          // หมายเหตุ: mode "no-cors" จะอ่าน response ไม่ได้
+          // จึงถือว่าสำเร็จเมื่อคำขอถูกส่งออกไปแล้ว
+          statusDiv.textContent = "✅ ส่งข้อมูลสำเร็จ";
+          statusDiv.style.color = "green";
+          form.reset();
+        })
+        .catch((err) => {
+          statusDiv.textContent = "❌ เกิดข้อผิดพลาด: " + err.message;
+          statusDiv.style.color = "red";
+        })
+        .finally(() => {
+          submitBtn.disabled = false;
+        });
+    });
+  </script>
 
 </body>
 </html>

@@ -1,1 +1,116 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ฟอร์มกรอกข้อมูล</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      max-width: 500px;
+      margin: auto;
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      box-sizing: border-box;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    button {
+      margin-top: 20px;
+      width: 100%;
+      padding: 12px;
+      background: #1a73e8;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+    button:disabled {
+      background: #999;
+    }
+    #status {
+      margin-top: 15px;
+      text-align: center;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
 
+  <h2>กรอกข้อมูล</h2>
+
+  <form id="myForm">
+    <label for="name">ชื่อ</label>
+    <input type="text" id="name" name="Name" required>
+
+    <label for="email">อีเมล</label>
+    <input type="email" id="email" name="Email" required>
+
+    <label for="message">ข้อความ</label>
+    <textarea id="message" name="Message" rows="4" required></textarea>
+
+    <button type="submit" id="submitBtn">ส่งข้อมูล</button>
+  </form>
+
+  <div id="status"></div>
+
+  <script>
+    // ==== ใส่ URL ของ Google Apps Script Web App ที่นี่ ====
+    // ตัวอย่าง: "https://script.google.com/macros/s/AKfycb.../exec"
+    const SCRIPT_URL = "วาง_URL_ที่_deploy_จาก_Apps_Script_ตรงนี้";
+
+    const form = document.getElementById("myForm");
+    const statusDiv = document.getElementById("status");
+    const submitBtn = document.getElementById("submitBtn");
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      // กันลืมใส่ URL
+      if (!SCRIPT_URL || SCRIPT_URL.indexOf("วาง_URL") === 0) {
+        statusDiv.textContent = "⚠️ ยังไม่ได้ใส่ URL ของ Apps Script";
+        statusDiv.style.color = "orange";
+        return;
+      }
+
+      statusDiv.textContent = "กำลังส่งข้อมูล...";
+      statusDiv.style.color = "#333";
+      submitBtn.disabled = true;
+
+      // สร้าง FormData จากฟอร์ม (ชื่อ field ต้องตรงกับหัวตารางใน Sheet)
+      const formData = new FormData(form);
+
+      fetch(SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",       // จำเป็นสำหรับ Apps Script
+        body: formData
+      })
+        .then(() => {
+          // หมายเหตุ: mode "no-cors" จะอ่าน response ไม่ได้
+          // จึงถือว่าสำเร็จเมื่อคำขอถูกส่งออกไปแล้ว
+          statusDiv.textContent = "✅ ส่งข้อมูลสำเร็จ";
+          statusDiv.style.color = "green";
+          form.reset();
+        })
+        .catch((err) => {
+          statusDiv.textContent = "❌ เกิดข้อผิดพลาด: " + err.message;
+          statusDiv.style.color = "red";
+        })
+        .finally(() => {
+          submitBtn.disabled = false;
+        });
+    });
+  </script>
+
+</body>
+</html>

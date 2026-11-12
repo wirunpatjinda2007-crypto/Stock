@@ -452,6 +452,64 @@ function renderSummaryCharts() {
   }).join('');
 }
 
+// ============ Requests / messages from staff (home page) ============
+// Stored in this browser only (localStorage). Not shared between devices.
+const REQ_KEY = 'stockflow_requests';
+
+function loadRequests() {
+  try {
+    const raw = localStorage.getItem(REQ_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch (e) { return []; }
+}
+
+function saveRequests(list) {
+  try { localStorage.setItem(REQ_KEY, JSON.stringify(list)); }
+  catch (e) { alert('บันทึกคำขอไม่สำเร็จ (พื้นที่ของเบราว์เซอร์เต็มหรือถูกปิดไว้)'); }
+}
+
+function addRequest() {
+  const name = document.getElementById('reqName').value.trim() || 'ไม่ระบุชื่อ';
+  const text = document.getElementById('reqText').value.trim();
+  if (!text) { alert('กรุณากรอกรายการที่ต้องการ'); return; }
+  const list = loadRequests();
+  list.unshift({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name, text, at: new Date().toISOString() });
+  saveRequests(list);
+  document.getElementById('reqText').value = '';
+  renderRequests();
+  showToast('✅ ส่งคำขอแล้ว');
+}
+
+function deleteRequest(id) {
+  requireAdmin(() => {
+    if (!confirm('ลบคำขอนี้หรือไม่?')) return;
+    saveRequests(loadRequests().filter(r => r.id !== id));
+    renderRequests();
+  });
+}
+
+function renderRequests() {
+  const box = document.getElementById('reqList');
+  if (!box) return;
+  const list = loadRequests();
+  if (!list.length) {
+    box.innerHTML = '<div class="req-empty">ยังไม่มีคำขอ</div>';
+    return;
+  }
+  box.innerHTML = list.map(r => {
+    const when = new Date(r.at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
+    return `
+      <div class="req-item">
+        <div>
+          <div class="req-meta">${escapeHtml(r.name)} · ${when}</div>
+          <div>${escapeHtml(r.text)}</div>
+        </div>
+        ${isAdmin ? `<button class="req-del" onclick="deleteRequest('${r.id}')" title="ลบ">✕</button>` : ''}
+      </div>`;
+  }).join('');
+}
+
 function renderStats() {
   const total = products.length;
   const counted = products.filter(p => p.counted !== null && p.counted !== '' && p.counted !== undefined).length;
@@ -464,6 +522,7 @@ function renderStats() {
   document.getElementById('statCounted').textContent = counted;
   document.getElementById('statDiff').textContent = diff;
   renderSummaryCharts();
+  renderRequests();
 
   const pending = total - counted;
   document.getElementById('tabCountAll').textContent = total;

@@ -56,6 +56,48 @@ async function pushToCloud() {
   }
 }
 
+// ---------- คำขอ/ข้อความจากพนักงาน ----------
+// เก็บในแถว id = 'requests' ของตาราง stock_state (ใช้คอลัมน์ products เก็บรายการคำขอ)
+const REQ_ROW_ID = 'requests';
+
+// 4. ดึงคำขอจากคลาวด์มาแสดง
+async function pullRequestsFromCloud() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/stock_state?id=eq.${REQ_ROW_ID}&select=*`, {
+      headers: { 'apikey': SUPABASE_KEY }
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (Array.isArray(data) && data.length > 0 && Array.isArray(data[0].products)) {
+      localStorage.setItem(REQ_KEY, JSON.stringify(data[0].products));
+      renderRequests();
+    }
+  } catch (err) {
+    console.error('ดึงคำขอออนไลน์ไม่สำเร็จ:', err);
+  }
+}
+
+// 5. ส่งคำขอทั้งหมดขึ้นคลาวด์
+async function pushRequestsToCloud(list) {
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/stock_state?on_conflict=id`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates,return=minimal'
+      },
+      body: JSON.stringify({
+        id: REQ_ROW_ID,
+        products: list,
+        updated_at: new Date().toISOString()
+      })
+    });
+  } catch (err) {
+    console.error('บันทึกคำขอออนไลน์ไม่สำเร็จ:', err);
+  }
+}
+
 // 3. เชื่อมเข้ากับฟังก์ชันเดิมของ app.js อัตโนมัติ
 const originalSaveDataToCache = saveDataToCache;
 saveDataToCache = function() {
@@ -69,6 +111,15 @@ saveAdminPin = function(p) {
   pushToCloud();
 };
 
+const originalSaveRequests = saveRequests;
+saveRequests = function(list) {
+  originalSaveRequests(list);
+  pushRequestsToCloud(list);
+};
+
 // โหลดข้อมูลเมื่อเปิดเว็บ และซิงก์ข้อมูลใหม่ทุก 5 วินาที
 pullFromCloud();
 setInterval(pullFromCloud, 5000);
+
+pullRequestsFromCloud();
+setInterval(pullRequestsFromCloud, 5000);

@@ -284,7 +284,7 @@ header {
   border-color: var(--brand-600);
   font-weight: 600;
 }
-.tab .count-badge {
+.tab .count-badge, .hist-subtab .count-badge {
   display: inline-block;
   margin-left: 6px;
   padding: 0 6px;
@@ -293,7 +293,7 @@ header {
   font-size: 11px;
   font-weight: 600;
 }
-.tab:not(.active) .count-badge {
+.tab:not(.active) .count-badge, .hist-subtab:not(.active) .count-badge {
   background: var(--slate-100);
   color: var(--slate-600);
 }
@@ -557,6 +557,161 @@ header {
 }
 .delete-btn:hover { background: var(--danger-bg); color: var(--danger); }
 .delete-btn:active { transform: scale(0.95); }
+
+/* ============ History Page Styles (NEW) ============ */
+.hist-toolbar {
+  margin: 18px 28px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.hist-subtabs {
+  display: flex;
+  gap: 6px;
+  background: #fff;
+  padding: 5px;
+  border-radius: 12px;
+  border: 1px solid var(--slate-200);
+}
+.hist-subtab {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--slate-600);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.hist-subtab.active {
+  background: var(--brand-600);
+  color: #fff;
+}
+.hist-filters {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+  justify-content: flex-end;
+  min-width: 260px;
+}
+.hist-date-input,
+.hist-search-input {
+  padding: 9px 12px;
+  border: 1px solid var(--slate-300);
+  border-radius: 10px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--slate-900);
+  outline: none;
+}
+.hist-search-input {
+  min-width: 220px;
+}
+.hist-date-input:focus,
+.hist-search-input:focus {
+  border-color: var(--brand-600);
+  box-shadow: var(--ring);
+}
+
+#histSessionsWrap {
+  margin: 16px 28px 0;
+}
+.history-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.history-card {
+  background: #fff;
+  border: 1px solid var(--slate-200);
+  border-left: 4px solid var(--brand-600);
+  border-radius: 14px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  box-shadow: var(--shadow-xs);
+  flex-wrap: wrap;
+}
+.hc-main {
+  flex: 1;
+  min-width: 240px;
+}
+.hc-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.hc-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--slate-900);
+}
+.hc-time {
+  font-size: 12px;
+  color: var(--slate-500);
+  background: var(--slate-100);
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+.hc-sub {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--slate-500);
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.hc-pills {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.hc-pill {
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--slate-100);
+  color: var(--slate-700);
+}
+.hc-pill.info  { background: var(--brand-50); color: var(--brand-700); }
+.hc-pill.ok    { background: var(--success-bg); color: var(--success); }
+.hc-pill.short { background: var(--danger-bg); color: var(--danger); }
+.hc-pill.over  { background: var(--warning-bg); color: var(--warning); }
+.hc-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.modal-content.modal-wide {
+  max-width: 820px;
+}
+.hd-summary-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  background: var(--slate-50);
+  border: 1px solid var(--slate-200);
+  border-radius: 10px;
+  font-size: 13px;
+}
+.hd-stat {
+  padding-right: 10px;
+}
+.hd-stat.ok strong { color: var(--success); }
+.hd-stat.short strong { color: var(--danger); }
+.hd-stat.over strong { color: var(--warning); }
 
 /* ============ FAB ============ */
 .fab {
@@ -892,10 +1047,11 @@ body.select-mode .product-card .delete-btn { display: none; }
     background: var(--slate-100);
   }
   header { border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
+  .modal { align-items: center; }
   .modal-content {
     border-radius: var(--radius-xl);
     border-top-width: 3px;
-    margin-bottom: 20px;
+    margin-bottom: 0;
   }
   .save-bar, .selection-bar {
     max-width: 720px;

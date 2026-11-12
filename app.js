@@ -20,6 +20,10 @@ let fileHandle = null;
 let fileName = '';
 let fileHasPermission = false;
 
+// Excel column name for category (falls back to Thai header 'หมวดหมู่')
+const CAT_COL = (CONFIG.EXCEL_COLUMNS && CONFIG.EXCEL_COLUMNS.CATEGORY) || 'หมวดหมู่';
+const DEFAULT_CATEGORY = 'ไม่ระบุ';
+
 // ============ Storage ============
 function loadData() {
   try { products = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEY) || '[]'); } catch (e) { products = []; }
@@ -95,6 +99,7 @@ async function parseExcelFile(file) {
           id: row[c.ID] || genId(),
           name: row[c.NAME] || 'ไม่มีชื่อ',
           sku: row[c.SKU] || '',
+          category: String(row[CAT_COL] || '').trim(),
           system: parseInt(row[c.SYSTEM]) || 0,
           counted: (row[c.COUNTED] !== undefined && row[c.COUNTED] !== '') ? parseInt(row[c.COUNTED]) : null
         }));
@@ -116,7 +121,7 @@ async function saveToFile() {
   }
 
   const saveBtn = document.getElementById('saveBtn');
-  const originalText = saveBtn.textContent;
+  const originalHtml = saveBtn.innerHTML;
   saveBtn.disabled = true;
   saveBtn.textContent = '⏳ กำลังบันทึก...';
 
@@ -142,6 +147,7 @@ async function saveToFile() {
         [c.ID]: p.id,
         [c.NAME]: p.name,
         [c.SKU]: p.sku || '',
+        [CAT_COL]: p.category || '',
         [c.SYSTEM]: p.system,
         [c.COUNTED]: (p.counted === null || p.counted === '') ? '' : p.counted,
         [c.DIFF]: d === null ? '' : d,
@@ -169,7 +175,7 @@ async function saveToFile() {
     alert('ไม่สามารถบันทึกไฟล์ได้: ' + err.message);
   } finally {
     saveBtn.disabled = false;
-    saveBtn.textContent = originalText;
+    saveBtn.innerHTML = originalHtml;
   }
 }
 
@@ -182,11 +188,11 @@ function updateFileBar() {
 
   if (fileHandle) {
     fileNameEl.textContent = fileName;
-    fileSub.textContent = 'เชื่อมต่อแล้ว • พร้อมบันทึก';
+    fileSub.textContent = 'อัปโหลดสำเร็จ • พร้อมใช้งาน';
     fileSub.classList.add('connected');
     fileIcon.classList.add('connected');
     fileIcon.textContent = '✓';
-    openBtn.textContent = '🔄 เปลี่ยน';
+    openBtn.textContent = '🔄 เปลี่ยนไฟล์';
     saveBar.style.display = 'flex';
     updateSaveBar();
   } else {
@@ -424,7 +430,8 @@ function renderList() {
     const s = searchTerm.toLowerCase();
     list = list.filter(p =>
       (p.name || '').toLowerCase().includes(s) ||
-      (p.sku || '').toLowerCase().includes(s)
+      (p.sku || '').toLowerCase().includes(s) ||
+      (p.category || '').toLowerCase().includes(s)
     );
   }
 
@@ -455,9 +462,11 @@ function renderList() {
       }
     }
     const isSelected = selectedIds.has(p.id);
+    const cat = (p.category || '').trim() || DEFAULT_CATEGORY;
     return `
       <div class="product-card ${cardClass} ${isSelected ? 'selected' : ''}"
-           data-id="${p.id}" onclick="handleCardClick(event, '${p.id}')">
+           data-id="${p.id}" data-category="${escapeHtml(p.category || '')}"
+           onclick="handleCardClick(event, '${p.id}')">
         <div class="checkbox"></div>
         ${isAdmin ? `<button class="delete-btn" onclick="event.stopPropagation(); deleteSingle('${p.id}')" title="ลบ">✕</button>` : ''}
         <div class="product-header">
@@ -607,13 +616,22 @@ function setCount(id, val) {
 }
 
 // ============ Admin Actions ============
+function fillCategoryList() {
+  const list = document.getElementById('catList');
+  if (!list) return;
+  const cats = [...new Set(products.map(p => (p.category || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'th'));
+  list.innerHTML = cats.map(c => `<option value="${escapeHtml(c)}"></option>`).join('');
+}
+
 function openAddModal() {
   requireAdmin(() => {
     editingId = null;
     document.getElementById('modalTitle').textContent = 'เพิ่มสินค้า';
     document.getElementById('inputName').value = '';
     document.getElementById('inputSku').value = '';
+    document.getElementById('inputCategory').value = '';
     document.getElementById('inputSystem').value = '';
+    fillCategoryList();
     document.getElementById('productModal').classList.add('show');
     setTimeout(() => document.getElementById('inputName').focus(), 200);
   });
@@ -627,7 +645,9 @@ function openEditModal(id) {
     document.getElementById('modalTitle').textContent = 'แก้ไขสินค้า';
     document.getElementById('inputName').value = p.name;
     document.getElementById('inputSku').value = p.sku || '';
+    document.getElementById('inputCategory').value = p.category || '';
     document.getElementById('inputSystem').value = p.system;
+    fillCategoryList();
     document.getElementById('productModal').classList.add('show');
   });
 }
@@ -635,15 +655,16 @@ function openEditModal(id) {
 function saveProduct() {
   const name = document.getElementById('inputName').value.trim();
   const sku = document.getElementById('inputSku').value.trim();
+  const category = document.getElementById('inputCategory').value.trim();
   const system = parseInt(document.getElementById('inputSystem').value) || 0;
   if (!name) { alert('กรุณากรอกชื่อสินค้า'); return; }
 
   if (editingId) {
     const p = products.find(x => x.id === editingId);
-    if (p) { p.name = name; p.sku = sku; p.system = system; }
+    if (p) { p.name = name; p.sku = sku; p.category = category; p.system = system; }
     showToast('✅ แก้ไขสินค้าแล้ว');
   } else {
-    products.push({ id: genId(), name, sku, system, counted: null });
+    products.push({ id: genId(), name, sku, category, system, counted: null });
     showToast('✅ เพิ่มสินค้าแล้ว');
   }
   saveDataToCache();

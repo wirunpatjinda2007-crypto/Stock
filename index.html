@@ -19,7 +19,7 @@
 <!-- Styles -->
 <link rel="stylesheet" href="styles.css">
 
-<!-- Layout for the dashboard look (sidebar + topbar + hero + panel) -->
+<!-- Dashboard layout (sidebar + topbar + hero + panel + notifications) -->
 <style>
   body {
     display: flex;
@@ -139,35 +139,6 @@
     top: 0;
     z-index: 15;
   }
-  .bell {
-    position: relative;
-    width: 38px; height: 38px;
-    display: flex; align-items: center; justify-content: center;
-    color: #1e3a8a;
-    border-radius: 10px;
-  }
-  .bell .badge-dot {
-    position: absolute;
-    top: 2px; right: 2px;
-    min-width: 17px; height: 17px;
-    padding: 0 4px;
-    border-radius: 999px;
-    background: #dc2626;
-    color: #fff;
-    font-size: 10px;
-    font-weight: 700;
-    display: flex; align-items: center; justify-content: center;
-    border: 2px solid #fff;
-  }
-  .user-chip {
-    display: flex; align-items: center; gap: 10px;
-    font-size: 14px; font-weight: 600; color: #0f1d36;
-  }
-  .user-chip .avatar {
-    width: 36px; height: 36px; border-radius: 50%;
-    background: #1e3a8a;
-    display: flex; align-items: center; justify-content: center;
-  }
   .topbar .admin-badge {
     background: #eff6ff;
     color: #1e40af;
@@ -176,6 +147,94 @@
   .topbar .admin-badge:hover { background: #dbeafe; }
   .topbar .admin-badge.unlocked {
     background: #059669; color: #fff; border-color: #059669;
+  }
+
+  /* Notification bell */
+  .bell-wrap { position: relative; }
+  .bell {
+    position: relative;
+    width: 38px; height: 38px;
+    display: flex; align-items: center; justify-content: center;
+    color: #1e3a8a;
+    border-radius: 10px;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+  }
+  .bell:hover { background: #eff6ff; }
+  .bell .badge-dot {
+    position: absolute;
+    top: 0; right: 0;
+    min-width: 18px; height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: #dc2626;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid #fff;
+    box-sizing: content-box;
+  }
+
+  .notif-panel {
+    position: absolute;
+    right: 0;
+    top: 48px;
+    width: 320px;
+    max-width: calc(100vw - 28px);
+    max-height: 360px;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    box-shadow: 0 12px 30px rgba(15,29,54,0.15);
+    z-index: 50;
+  }
+  .notif-panel[hidden] { display: none; }
+  .notif-head {
+    padding: 12px 16px;
+    font-weight: 700;
+    color: #0f1d36;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .notif-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    cursor: pointer;
+    font-size: 13px;
+    color: #0f1d36;
+  }
+  .notif-item:hover { background: #f8fafc; }
+  .notif-item .sku { font-size: 11px; color: #64748b; margin-top: 2px; }
+  .notif-item .tag-short { color: #dc2626; font-weight: 700; white-space: nowrap; }
+  .notif-item .tag-over  { color: #ea580c; font-weight: 700; white-space: nowrap; }
+  .notif-empty {
+    padding: 20px 16px;
+    text-align: center;
+    color: #64748b;
+    font-size: 13px;
+  }
+
+  @keyframes cardFlash {
+    0%   { box-shadow: 0 0 0 4px rgba(147,197,253,0.9); }
+    100% { box-shadow: none; }
+  }
+  .card-flash { animation: cardFlash 1.2s ease; }
+
+  .user-chip {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; font-weight: 600; color: #0f1d36;
+  }
+  .user-chip .avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: #1e3a8a;
+    display: flex; align-items: center; justify-content: center;
   }
 
   /* ---------- Hero banner ---------- */
@@ -252,6 +311,9 @@
   .stat-box.counted .num { color: #059669; }
   .stat-box.diff .stat-ic { background: #ffedd5; color: #ea580c; }
   .stat-box.diff .num { color: #0f1d36; }
+
+  /* ---------- Readonly banner spacing ---------- */
+  #readonlyBanner { margin: 20px 28px 0 !important; border-radius: 12px !important; }
 
   /* ---------- Panel ---------- */
   .panel {
@@ -353,16 +415,17 @@
   }
   .save-bar .btn-success:hover:not(:disabled) { background: #1e40af; border-color: #1e40af; }
 
-  /* ---------- Responsive ---------- */
+  /* ---------- Tablet / small desktop (≤ 899px) ---------- */
   @media (max-width: 899px) {
     .sidebar { display: none; }
     .main { margin-left: 0; }
-    .hero, .stats-wrap, .panel { margin-left: 14px; margin-right: 14px; }
-    .stats-wrap { padding-left: 0; padding-right: 0; }
+    .hero, .panel { margin-left: 14px; margin-right: 14px; }
+    .stats-wrap { padding-left: 14px; padding-right: 14px; }
     .hero { margin-top: 14px; }
     .topbar { padding: 12px 16px; }
     .hero h2 { font-size: 22px; }
     .hero-icon { width: 56px; height: 56px; }
+    #readonlyBanner { margin-left: 14px !important; margin-right: 14px !important; }
   }
 
   @media (min-width: 900px) {
@@ -377,23 +440,24 @@
     .selection-bar.show { transform: translateY(0); }
     .product-list { grid-template-columns: repeat(2, 1fr); }
   }
+
   /* ---------- Phone (≤ 599px) ---------- */
   @media (max-width: 599px) {
     body { padding-bottom: 110px; }
 
-    /* Topbar */
     .topbar {
       padding: 10px 14px;
       gap: 10px;
       justify-content: space-between;
     }
     .topbar .admin-badge { font-size: 11px; padding: 6px 10px; }
-    .topbar .bell { width: 34px; height: 34px; }
+    .bell { width: 34px; height: 34px; }
     .user-chip span,
     .user-chip > svg:last-child { display: none; }
     .user-chip .avatar { width: 34px; height: 34px; }
 
-    /* Hero: compact, no decorative icon */
+    .notif-panel { top: 42px; }
+
     .hero {
       margin: 12px 14px 0;
       padding: 14px 16px;
@@ -404,7 +468,6 @@
     .hero h2 { font-size: 19px; }
     .hero p { font-size: 12px; margin-top: 4px; }
 
-    /* Stats: three compact columns, no sparkline overlap */
     .stats-wrap { padding: 0; margin: 12px 14px 0; }
     .stats-wrap .stats { gap: 8px; }
     .stats-wrap .stat-box {
@@ -420,7 +483,8 @@
     .stats-wrap .stat-box .label { font-size: 11px; margin-bottom: 2px; line-height: 1.3; }
     .stats-wrap .stat-box .num { font-size: 22px; }
 
-    /* Panel */
+    #readonlyBanner { margin: 12px 14px 0 !important; border-radius: 10px !important; }
+
     .panel {
       margin: 12px 14px 0;
       padding: 14px 12px 6px;
@@ -445,7 +509,6 @@
     .panel .tab { padding: 8px 12px; font-size: 12px; }
     .panel .actions-bar { padding-bottom: 10px; }
 
-    /* Product cards: single column, tighter */
     .product-list { padding-bottom: 8px; }
     .product-card { padding: 14px 12px; }
     .product-name { font-size: 14px; }
@@ -456,10 +519,6 @@
     .count-controls { max-width: none; width: 100%; }
     .count-controls button { width: 48px; height: 40px; }
 
-    /* Readonly banner spacing */
-    #readonlyBanner { margin: 12px 14px 0 !important; border-radius: 10px !important; }
-
-    /* Bottom bars and FAB */
     .save-bar { padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); gap: 10px; }
     .save-bar .status { font-size: 12px; min-width: 0; }
     .save-bar .status svg { width: 16px; height: 16px; }
@@ -522,10 +581,18 @@
       <span id="adminIcon">🔓</span>
       <span id="adminText">โหมดทั่วไป</span>
     </div>
-    <div class="bell" aria-label="การแจ้งเตือน">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
-      <span class="badge-dot">2</span>
+
+    <div class="bell-wrap">
+      <button class="bell" id="bellBtn" type="button" aria-label="การแจ้งเตือน">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+        <span class="badge-dot" id="bellCount" style="display:none">0</span>
+      </button>
+      <div class="notif-panel" id="notifPanel" hidden>
+        <div class="notif-head">การแจ้งเตือน</div>
+        <div class="notif-list" id="notifList"></div>
+      </div>
     </div>
+
     <div class="user-chip">
       <div class="avatar">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0z"/></svg>
@@ -595,11 +662,11 @@
   </div>
 
   <!-- ============ Readonly Banner ============ -->
-  <div id="readonlyBanner" class="readonly-banner" style="display:none; margin: 20px 28px 0; border-radius: 12px;">
+  <div id="readonlyBanner" class="readonly-banner" style="display:none;">
     👤 โหมดทั่วไป — นับสต๊อกได้ แต่ไม่สามารถเพิ่ม/แก้ไข/ลบสินค้าได้
   </div>
 
-  <!-- ============ Panel (file check + list) ============ -->
+  <!-- ============ Panel ============ -->
   <section class="panel">
 
     <div class="panel-head">
@@ -633,7 +700,7 @@
       </span>
     </div>
 
-    <!-- ============ Search ============ -->
+    <!-- Search -->
     <div class="search-bar">
       <div class="search-wrapper">
         <span class="icon">
@@ -643,7 +710,7 @@
       </div>
     </div>
 
-    <!-- ============ Tabs ============ -->
+    <!-- Tabs -->
     <div class="tabs">
       <div class="tab active" data-tab="all">ทั้งหมด <span class="count-badge" id="tabCountAll">0</span></div>
       <div class="tab" data-tab="pending">ยังไม่บันทึก <span class="count-badge" id="tabCountPending">0</span></div>
@@ -651,7 +718,7 @@
       <div class="tab" data-tab="diff">ขาด <span class="count-badge" id="tabCountDiff">0</span></div>
     </div>
 
-    <!-- ============ Actions (admin) ============ -->
+    <!-- Actions (admin) -->
     <div class="actions-bar">
       <button class="btn btn-secondary admin-only" onclick="toggleSelectMode()" disabled id="selectModeBtn">☑️ เลือกลบ</button>
       <button class="btn btn-secondary admin-only" onclick="resetCount()" disabled>🔄 รีเซ็ต</button>
@@ -659,7 +726,7 @@
       <button class="btn btn-secondary admin-only" onclick="openChangePinModal()" disabled>🔑 เปลี่ยน PIN</button>
     </div>
 
-    <!-- ============ Product List ============ -->
+    <!-- Product List -->
     <div class="product-list" id="productList"></div>
 
   </section>
@@ -772,5 +839,88 @@
 <script src="app.js"></script>
 <!-- ==== เพิ่มสำหรับซิงก์กับ Google Sheets (ไฟล์ sync.js ต้องวางข้างๆ app.js) ==== -->
 <script src="jap.js"></script>
+
+<!-- ============ Notification logic ============ -->
+<script>
+(function () {
+  const bellBtn     = document.getElementById('bellBtn');
+  const bellCount   = document.getElementById('bellCount');
+  const panel       = document.getElementById('notifPanel');
+  const list        = document.getElementById('notifList');
+  const productList = document.getElementById('productList');
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[c]);
+  }
+
+  function collectIssues() {
+    return Array.from(productList.querySelectorAll('.product-card.short, .product-card.over'))
+      .map(card => ({
+        card,
+        name:  card.querySelector('.product-name')?.textContent.trim() || '-',
+        sku:   card.querySelector('.product-sku')?.textContent.trim() || '',
+        badge: card.querySelector('.diff-badge')?.textContent.trim() || '',
+        type:  card.classList.contains('short') ? 'short' : 'over'
+      }));
+  }
+
+  function render() {
+    const issues = collectIssues();
+
+    bellCount.textContent = issues.length;
+    bellCount.style.display = issues.length ? 'flex' : 'none';
+
+    list.innerHTML = '';
+    if (!issues.length) {
+      list.innerHTML = '<div class="notif-empty">ไม่มีรายการที่ขาดหรือเกิน</div>';
+      return;
+    }
+
+    issues.forEach(it => {
+      const row = document.createElement('div');
+      row.className = 'notif-item';
+      row.innerHTML =
+        `<div>
+           <div>${escapeHtml(it.name)}</div>
+           <div class="sku">${escapeHtml(it.sku)}</div>
+         </div>
+         <div class="tag-${it.type}">${escapeHtml(it.badge)}</div>`;
+
+      row.addEventListener('click', () => {
+        panel.hidden = true;
+        it.card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        it.card.classList.remove('card-flash');
+        void it.card.offsetWidth;
+        it.card.classList.add('card-flash');
+      });
+
+      list.appendChild(row);
+    });
+  }
+
+  bellBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    panel.hidden = !panel.hidden;
+    if (!panel.hidden) render();
+  });
+
+  document.addEventListener('click', e => {
+    if (!panel.contains(e.target) && !bellBtn.contains(e.target)) {
+      panel.hidden = true;
+    }
+  });
+
+  new MutationObserver(render).observe(productList, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['class']
+  });
+
+  render();
+})();
+</script>
 </body>
 </html>

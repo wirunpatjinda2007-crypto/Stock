@@ -6,6 +6,8 @@
 const CONFIG = {
   // Storage Keys (ใช้ใน localStorage & IndexedDB)
   STORAGE_KEY: 'stockflow_data_v5',
+  HISTORY_KEY: 'stockflow_history_v1',
+  LOG_KEY: 'stockflow_logs_v1',
   ADMIN_KEY: 'stockflow_admin_v1',
   DB_NAME: 'StockFlowDB',
 
@@ -18,6 +20,7 @@ const CONFIG = {
     ID: 'ID',
     NAME: 'ชื่อสินค้า',
     SKU: 'SKU',
+    CATEGORY: 'หมวดหมู่',
     SYSTEM: 'ในระบบ',
     COUNTED: 'นับได้',
     DIFF: 'ผลต่าง',

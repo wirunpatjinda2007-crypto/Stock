@@ -1,16 +1,17 @@
 /* ============================================================
    sync.js — ซิงก์ StockFlow กับ Google Sheets
+   เวอร์ชัน: ใช้ no-cors เพื่อเลี่ยงปัญหา CORS ของ Apps Script
    วิธีใช้: แค่ใส่ URL ของ Apps Script ด้านล่าง
-   ไม่ต้องแก้ app.js หรือ index.html ส่วนอื่น
    ============================================================ */
 
 (function () {
   "use strict";
 
   // ==== ใส่ URL ของ Google Apps Script Web App ที่นี่ ====
+  // ต้องลงท้ายด้วย /exec และ Deploy แบบ Who has access: Anyone
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxJN1g7KnAhKuvfoY4Ba9dyRNJP1eQyMVUNq2MchpZfmXK1AklJNm2ZSWwYO3NG-pPQ/exec";
 
-  // ชื่อฟังก์ชันบันทึกเดิมในแอปคุณ (ตาม index.html คือ saveToFile)
+  // ชื่อฟังก์ชันบันทึกเดิมในแอป (ตาม index.html คือ saveToFile)
   const SAVE_FN_NAME = "saveToFile";
 
   function showToast(msg, color) {
@@ -20,22 +21,19 @@
       t.style.background = color || "#333";
       t.classList.add("show");
       setTimeout(() => t.classList.remove("show"), 2500);
-    } else {
-      console.log("[sync]", msg);
     }
+    console.log("[sync]", msg);
   }
 
   // ดึงข้อมูลสินค้าจาก state ของแอป
-  // ลองหาตัวแปร global ก่อน ถ้าไม่เจอจะ fallback ไปอ่านจาก DOM
   function getProducts() {
-    // ลองชื่อตัวแปรที่พบบ่อยในแอปแนวนี้
     const candidates = ["products", "PRODUCTS", "items", "stockData", "state"];
     for (const name of candidates) {
       const v = window[name];
       if (Array.isArray(v)) return v;
       if (v && Array.isArray(v.products)) return v.products;
     }
-    // fallback: อ่านจาก DOM ที่มี data-* (ถ้าแอปคุณใส่ data-id ไว้)
+    // fallback: อ่านจาก DOM ที่มี data-*
     const nodes = document.querySelectorAll("[data-id]");
     if (nodes.length) {
       return Array.from(nodes).map((n) => ({
@@ -61,9 +59,12 @@
     }
 
     try {
-      // ส่งเป็น JSON string ผ่าน text/plain เพื่อเลี่ยง CORS preflight
-      const res = await fetch(SCRIPT_URL, {
+      // ใช้ no-cors เพื่อเลี่ยงการบล็อกจาก CORS ของ Apps Script
+      // ข้อจำกัด: อ่าน response ไม่ได้ จึงไม่รู้ว่า success/error
+      // ต้องไปตรวจที่ Google Sheets เอง
+      await fetch(SCRIPT_URL, {
         method: "POST",
+        mode: "no-cors",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify({
           action: "syncAll",
@@ -72,15 +73,10 @@
         }),
       });
 
-      const json = await res.json();
-      if (json && json.result === "success") {
-        showToast("✅ ซิงก์ขึ้น Google Sheets แล้ว", "#16a34a");
-        return true;
-      }
-      showToast("❌ Sheets ตอบกลับผิดปกติ", "#dc2626");
-      return false;
+      showToast("✅ ส่งข้อมูลแล้ว (ตรวจสอบที่ Google Sheets)", "#16a34a");
+      return true;
     } catch (err) {
-      showToast("❌ เชื่อมต่อ Sheets ไม่ได้: " + err.message, "#dc2626");
+      showToast("❌ ส่งไม่สำเร็จ: " + err.message, "#dc2626");
       return false;
     }
   }
@@ -95,7 +91,6 @@
       const btn = document.getElementById("saveBtn");
       if (btn) {
         btn.addEventListener("click", () => {
-          // รอให้แอปเดิมบันทึกเสร็จก่อน (หน่วงเล็กน้อย)
           setTimeout(() => {
             const p = getProducts();
             if (p) pushToSheet(p);
@@ -106,9 +101,7 @@
     }
 
     window[SAVE_FN_NAME] = async function () {
-      // เรียกฟังก์ชันเดิมก่อน (ให้บันทึก Excel ในเครื่องตามปกติ)
       const ret = original.apply(this, arguments);
-      // แล้วค่อยซิงก์ขึ้น Sheets
       const p = getProducts();
       if (p) await pushToSheet(p);
       return ret;

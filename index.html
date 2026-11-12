@@ -250,6 +250,22 @@
     flex-shrink: 0;
   }
   .stat-txt { position: relative; z-index: 1; }
+  .summary-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+  .summary-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; }
+  .summary-title { font-weight: 700; color: #0f1d36; margin-bottom: 14px; font-size: 15px; }
+  .donut-row { display: flex; align-items: center; gap: 20px; }
+  .donut { width: 120px; height: 120px; flex-shrink: 0; }
+  .donut-pct { font-size: 18px; font-weight: 700; fill: #1d4ed8; }
+  .legend { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: 14px; color: #334155; }
+  .legend .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
+  .legend b { margin-left: 6px; color: #0f1d36; }
+  .cat-bars { display: grid; gap: 14px; }
+  .cat-bar-head { display: flex; justify-content: space-between; font-size: 13px; color: #334155; margin-bottom: 6px; }
+  .cat-bar-track { height: 10px; background: #e2e8f0; border-radius: 999px; overflow: hidden; }
+  .cat-bar-fill { height: 100%; background: linear-gradient(90deg, #93c5fd, #2563eb); border-radius: 999px; transition: width .4s; }
+  .cat-empty { font-size: 13px; color: #64748b; }
+  @media (max-width: 899px) { .summary-wrap { grid-template-columns: 1fr; } }
+  @media (max-width: 599px) { .donut-row { gap: 14px; } .donut { width: 96px; height: 96px; } }
   .stat-box .label { margin-bottom: 8px; font-size: 14px; color: #334155; font-weight: 600; }
   .stat-box .num { font-size: 32px; font-weight: 700; }
   .stat-box .spark { position: absolute; right: 0; bottom: 0; width: 52%; height: 70%; opacity: 0.9; }
@@ -672,6 +688,29 @@
             <path d="M0 44 L20 40 L40 42 L60 34 L80 36 L100 26 L120 18 L120 50 L0 50Z" fill="url(#g3)"/>
             <polyline points="0,44 20,40 40,42 60,34 80,36 100,26 120,18" fill="none" stroke="#ea580c" stroke-width="2"/>
           </svg>
+        </div>
+      </div>
+
+      <div class="summary-wrap">
+        <div class="summary-card">
+          <div class="summary-title">สถานะการนับ</div>
+          <div class="donut-row">
+            <svg class="donut" viewBox="0 0 120 120" aria-label="สัดส่วนสถานะการนับ">
+              <circle cx="60" cy="60" r="46" fill="none" stroke="#e2e8f0" stroke-width="16"/>
+              <circle id="donutOk" cx="60" cy="60" r="46" fill="none" stroke="#059669" stroke-width="16" stroke-dasharray="0 289" transform="rotate(-90 60 60)"/>
+              <circle id="donutDiff" cx="60" cy="60" r="46" fill="none" stroke="#ea580c" stroke-width="16" stroke-dasharray="0 289" transform="rotate(-90 60 60)"/>
+              <text id="donutPct" x="60" y="66" text-anchor="middle" class="donut-pct">0%</text>
+            </svg>
+            <ul class="legend">
+              <li><span class="dot" style="background:#059669"></span>ตรง <b id="legOk">0</b></li>
+              <li><span class="dot" style="background:#ea580c"></span>ขาด/เกิน <b id="legDiff">0</b></li>
+              <li><span class="dot" style="background:#cbd5e1"></span>ยังไม่นับ <b id="legPending">0</b></li>
+            </ul>
+          </div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-title">สรุปตามหมวดหมู่</div>
+          <div id="catBars" class="cat-bars"></div>
         </div>
       </div>
 

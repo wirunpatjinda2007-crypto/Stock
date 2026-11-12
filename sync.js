@@ -8,7 +8,7 @@
   "use strict";
 
   // ==== ใส่ URL ของ Google Apps Script Web App ที่นี่ ====
-  const SCRIPT_URL = "วาง_URL_ที่_deploy_จาก_Apps_Script_ตรงนี้";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxJN1g7KnAhKuvfoY4Ba9dyRNJP1eQyMVUNq2MchpZfmXK1AklJNm2ZSWwYO3NG-pPQ/exec";
 
   // ชื่อฟังก์ชันบันทึกเดิมในแอปคุณ (ตาม index.html คือ saveToFile)
   const SAVE_FN_NAME = "saveToFile";

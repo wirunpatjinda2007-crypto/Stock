@@ -264,6 +264,18 @@
   .cat-bar-track { height: 10px; background: #e2e8f0; border-radius: 999px; overflow: hidden; }
   .cat-bar-fill { height: 100%; background: linear-gradient(90deg, #93c5fd, #2563eb); border-radius: 999px; transition: width .4s; }
   .cat-empty { font-size: 13px; color: #64748b; }
+  .requests-card { margin-top: 16px; }
+  .req-form { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .req-form .req-name { flex: 0 0 140px; }
+  .req-form .req-text { flex: 1 1 200px; }
+  .req-form input { padding: 10px 12px; font: inherit; font-size: 14px; border: 1px solid #cbd5e1; border-radius: 10px; min-width: 0; }
+  .req-form input:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.15); }
+  .req-list { display: grid; gap: 8px; max-height: 260px; overflow-y: auto; }
+  .req-item { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; padding: 10px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 14px; color: #0f1d36; }
+  .req-item .req-meta { font-size: 12px; color: #64748b; margin-bottom: 2px; }
+  .req-item .req-del { border: none; background: none; color: #dc2626; cursor: pointer; font-size: 16px; line-height: 1; }
+  .req-empty { font-size: 13px; color: #64748b; }
+  @media (max-width: 599px) { .req-form .req-name { flex: 1 1 100%; } .req-form .req-text { flex: 1 1 100%; } .req-form .btn { width: 100%; } }
   @media (max-width: 899px) { .summary-wrap { grid-template-columns: 1fr; } }
   @media (max-width: 599px) { .donut-row { gap: 14px; } .donut { width: 96px; height: 96px; } }
   .stat-box .label { margin-bottom: 8px; font-size: 14px; color: #334155; font-weight: 600; }
@@ -712,6 +724,16 @@
           <div class="summary-title">สรุปตามหมวดหมู่</div>
           <div id="catBars" class="cat-bars"></div>
         </div>
+      </div>
+
+      <div class="summary-card requests-card">
+        <div class="summary-title">คำขอ / ข้อความจากพนักงาน</div>
+        <form class="req-form" onsubmit="event.preventDefault(); addRequest();">
+          <input type="text" id="reqName" placeholder="ชื่อผู้ส่ง" maxlength="40" class="req-name">
+          <input type="text" id="reqText" placeholder="เช่น ถุงดำ 30*40 ใกล้หมด ขอสั่งเพิ่ม 5 แพ็ค" maxlength="200" class="req-text">
+          <button class="btn btn-primary" type="submit">ส่งคำขอ</button>
+        </form>
+        <div id="reqList" class="req-list"></div>
       </div>
 
       <div class="quick-actions">

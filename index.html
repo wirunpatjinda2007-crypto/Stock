@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="th" data-page="home">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -19,7 +19,7 @@
 <!-- Styles -->
 <link rel="stylesheet" href="styles.css">
 
-<!-- Dashboard layout (sidebar + topbar + hero + panel + notifications) -->
+<!-- Dashboard layout -->
 <style>
   body {
     display: flex;
@@ -41,6 +41,7 @@
     flex-direction: column;
     z-index: 40;
     overflow: hidden;
+    transition: transform 0.25s ease;
   }
   .sidebar::after {
     content: "";
@@ -55,22 +56,9 @@
     padding: 6px 0 28px;
     position: relative; z-index: 1;
   }
-  .side-brand .logo-cube {
-    width: 58px; height: 58px;
-    margin: 0 auto 10px;
-    display: block;
-  }
-  .side-brand h1 {
-    margin: 0;
-    font-size: 20px;
-    font-weight: 700;
-    letter-spacing: -0.2px;
-  }
-  .side-brand p {
-    margin: 4px 0 0;
-    font-size: 13px;
-    color: #bfdbfe;
-  }
+  .side-brand .logo-cube { width: 58px; height: 58px; margin: 0 auto 10px; display: block; }
+  .side-brand h1 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.2px; }
+  .side-brand p { margin: 4px 0 0; font-size: 13px; color: #bfdbfe; }
   .side-nav {
     display: flex;
     flex-direction: column;
@@ -87,6 +75,7 @@
     text-decoration: none;
     font-size: 14px;
     font-weight: 500;
+    cursor: pointer;
     transition: background 0.15s;
   }
   .nav-item svg { width: 20px; height: 20px; flex-shrink: 0; }
@@ -105,26 +94,22 @@
     font-size: 13px;
     position: relative; z-index: 1;
   }
-  .side-foot .online {
-    display: flex; align-items: center; gap: 8px;
-    color: #6ee7b7; font-weight: 500;
-  }
+  .side-foot .online { display: flex; align-items: center; gap: 8px; color: #6ee7b7; font-weight: 500; }
   .side-foot .online .dot {
     width: 8px; height: 8px; border-radius: 50%;
     background: #10b981;
     box-shadow: 0 0 0 3px rgba(16,185,129,0.25);
   }
-  .side-foot .user-line {
-    margin-top: 8px; color: #dbeafe;
-    display: flex; align-items: center; gap: 8px;
-  }
+  .side-foot .user-line { margin-top: 8px; color: #dbeafe; display: flex; align-items: center; gap: 8px; }
+
+  .side-overlay { display: none; }
 
   /* ---------- Main column ---------- */
-  .main {
-    margin-left: 240px;
-    flex: 1;
-    min-width: 0;
-  }
+  .main { margin-left: 240px; flex: 1; min-width: 0; }
+
+  /* ---------- Pages ---------- */
+  .page { display: none; }
+  .page.active { display: block; }
 
   /* ---------- Topbar ---------- */
   .topbar {
@@ -139,17 +124,20 @@
     top: 0;
     z-index: 15;
   }
-  .topbar .admin-badge {
-    background: #eff6ff;
-    color: #1e40af;
-    border: 1px solid #bfdbfe;
+  .menu-btn {
+    display: none;
+    width: 38px; height: 38px;
+    border: 1px solid #dbe5f3;
+    background: #fff;
+    border-radius: 10px;
+    color: #1e3a8a;
+    align-items: center; justify-content: center;
+    cursor: pointer;
   }
+  .topbar .admin-badge { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
   .topbar .admin-badge:hover { background: #dbeafe; }
-  .topbar .admin-badge.unlocked {
-    background: #059669; color: #fff; border-color: #059669;
-  }
+  .topbar .admin-badge.unlocked { background: #059669; color: #fff; border-color: #059669; }
 
-  /* Notification bell */
   .bell-wrap { position: relative; }
   .bell {
     position: relative;
@@ -157,10 +145,7 @@
     display: flex; align-items: center; justify-content: center;
     color: #1e3a8a;
     border-radius: 10px;
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
+    background: none; border: none; padding: 0; cursor: pointer;
   }
   .bell:hover { background: #eff6ff; }
   .bell .badge-dot {
@@ -177,7 +162,6 @@
     border: 2px solid #fff;
     box-sizing: content-box;
   }
-
   .notif-panel {
     position: absolute;
     right: 0;
@@ -193,33 +177,17 @@
     z-index: 50;
   }
   .notif-panel[hidden] { display: none; }
-  .notif-head {
-    padding: 12px 16px;
-    font-weight: 700;
-    color: #0f1d36;
-    border-bottom: 1px solid #e2e8f0;
-  }
+  .notif-head { padding: 12px 16px; font-weight: 700; color: #0f1d36; border-bottom: 1px solid #e2e8f0; }
   .notif-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 16px;
-    border-bottom: 1px solid #f1f5f9;
-    cursor: pointer;
-    font-size: 13px;
-    color: #0f1d36;
+    display: flex; justify-content: space-between; align-items: center; gap: 10px;
+    padding: 12px 16px; border-bottom: 1px solid #f1f5f9;
+    cursor: pointer; font-size: 13px; color: #0f1d36;
   }
   .notif-item:hover { background: #f8fafc; }
   .notif-item .sku { font-size: 11px; color: #64748b; margin-top: 2px; }
   .notif-item .tag-short { color: #dc2626; font-weight: 700; white-space: nowrap; }
   .notif-item .tag-over  { color: #ea580c; font-weight: 700; white-space: nowrap; }
-  .notif-empty {
-    padding: 20px 16px;
-    text-align: center;
-    color: #64748b;
-    font-size: 13px;
-  }
+  .notif-empty { padding: 20px 16px; text-align: center; color: #64748b; font-size: 13px; }
 
   @keyframes cardFlash {
     0%   { box-shadow: 0 0 0 4px rgba(147,197,253,0.9); }
@@ -227,10 +195,7 @@
   }
   .card-flash { animation: cardFlash 1.2s ease; }
 
-  .user-chip {
-    display: flex; align-items: center; gap: 10px;
-    font-size: 14px; font-weight: 600; color: #0f1d36;
-  }
+  .user-chip { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; color: #0f1d36; }
   .user-chip .avatar {
     width: 36px; height: 36px; border-radius: 50%;
     background: #1e3a8a;
@@ -264,28 +229,16 @@
     flex-shrink: 0;
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.2);
   }
-  .hero h2 {
-    margin: 0;
-    font-size: 30px;
-    font-weight: 700;
-    letter-spacing: -0.3px;
-  }
-  .hero p {
-    margin: 6px 0 0;
-    font-size: 15px;
-    color: #dbeafe;
-  }
+  .hero h2 { margin: 0; font-size: 30px; font-weight: 700; letter-spacing: -0.3px; }
+  .hero p { margin: 6px 0 0; font-size: 15px; color: #dbeafe; }
 
   /* ---------- Stats ---------- */
   .stats-wrap { padding: 20px 28px 0; }
   .stats-wrap .stats { gap: 16px; }
   .stats-wrap .stat-box {
-    display: flex;
-    align-items: center;
-    gap: 16px;
+    display: flex; align-items: center; gap: 16px;
     padding: 20px 22px;
-    position: relative;
-    overflow: hidden;
+    position: relative; overflow: hidden;
     border-radius: 16px;
     border: 1px solid #e2e8f0;
     box-shadow: 0 2px 8px rgba(15,23,42,0.04);
@@ -299,12 +252,7 @@
   .stat-txt { position: relative; z-index: 1; }
   .stat-box .label { margin-bottom: 8px; font-size: 14px; color: #334155; font-weight: 600; }
   .stat-box .num { font-size: 32px; font-weight: 700; }
-  .stat-box .spark {
-    position: absolute;
-    right: 0; bottom: 0;
-    width: 52%; height: 70%;
-    opacity: 0.9;
-  }
+  .stat-box .spark { position: absolute; right: 0; bottom: 0; width: 52%; height: 70%; opacity: 0.9; }
   .stat-box:nth-child(1) .stat-ic { background: #dbeafe; color: #2563eb; }
   .stat-box:nth-child(1) .num { color: #1d4ed8; }
   .stat-box.counted .stat-ic { background: #d1fae5; color: #059669; }
@@ -312,7 +260,22 @@
   .stat-box.diff .stat-ic { background: #ffedd5; color: #ea580c; }
   .stat-box.diff .num { color: #0f1d36; }
 
-  /* ---------- Readonly banner spacing ---------- */
+  /* Quick actions on home */
+  .quick-actions { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+  .quick-actions .btn { padding: 12px 22px; border-radius: 12px; font-size: 14px; }
+  .quick-actions .btn-primary { background: #1d4ed8; border-color: #1d4ed8; }
+  .quick-actions .btn-primary:hover:not(:disabled) { background: #1e40af; border-color: #1e40af; }
+
+  /* ---------- Page heads ---------- */
+  .page-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; margin: 20px 28px 0; flex-wrap: wrap;
+  }
+  .page-head h3 { margin: 0; font-size: 22px; font-weight: 700; color: #0f1d36; }
+  .page-head p { margin: 4px 0 0; font-size: 14px; color: #64748b; }
+  .page-actions { display: flex; gap: 10px; }
+
+  /* ---------- Readonly banner ---------- */
   #readonlyBanner { margin: 20px 28px 0 !important; border-radius: 12px !important; }
 
   /* ---------- Panel ---------- */
@@ -325,11 +288,8 @@
     box-shadow: 0 4px 16px rgba(15,23,42,0.05);
   }
   .panel-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; margin-bottom: 16px;
   }
   .panel-title { display: flex; align-items: center; gap: 14px; min-width: 0; }
   .panel-title .pt-icon {
@@ -338,89 +298,112 @@
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
   }
-  .panel-title h3 {
-    margin: 0;
-    font-size: 19px;
-    font-weight: 700;
-    color: #0f1d36;
-  }
-  .panel-title p {
-    margin: 3px 0 0;
-    font-size: 13px;
-    color: #64748b;
-  }
-  .panel-head .btn-primary {
-    padding: 11px 20px;
-    border-radius: 12px;
-    background: #1d4ed8;
-    border-color: #1d4ed8;
-  }
+  .panel-title h3 { margin: 0; font-size: 19px; font-weight: 700; color: #0f1d36; }
+  .panel-title p { margin: 3px 0 0; font-size: 13px; color: #64748b; }
+  .panel-head .btn-primary { padding: 11px 20px; border-radius: 12px; background: #1d4ed8; border-color: #1d4ed8; }
 
   .panel .file-bar {
-    margin: 0 0 14px;
-    padding: 14px 18px;
-    border: 1px solid #bfe9d4;
-    background: #f1fbf6;
-    border-radius: 12px;
-    box-shadow: none;
+    margin: 0 0 14px; padding: 14px 18px;
+    border: 1px solid #bfe9d4; background: #f1fbf6;
+    border-radius: 12px; box-shadow: none;
   }
   .panel .file-bar .file-icon {
     background: #059669; color: #fff;
-    width: 40px; height: 40px; border-radius: 50%;
-    font-size: 16px;
+    width: 40px; height: 40px; border-radius: 50%; font-size: 16px;
   }
   .panel .file-bar .file-name { font-size: 15px; color: #0f1d36; }
   .panel .file-bar .file-sub { font-size: 13px; }
   .file-close {
     width: 28px; height: 28px;
     display: flex; align-items: center; justify-content: center;
-    color: #64748b;
-    flex-shrink: 0;
+    color: #64748b; flex-shrink: 0;
   }
-
   .panel .search-bar { padding: 0 0 12px; background: transparent; }
-  .panel .search-bar input {
-    padding: 14px 16px 14px 46px;
-    border-color: #cbd5e1;
-    border-radius: 12px;
-  }
+  .panel .search-bar input { padding: 14px 16px 14px 46px; border-color: #cbd5e1; border-radius: 12px; }
   .panel .search-wrapper .icon { left: 16px; color: #64748b; }
-
   .panel .tabs { padding: 0 0 14px; background: transparent; }
   .panel .tab { padding: 9px 16px; }
-
   .panel .actions-bar { padding: 0 0 14px; }
   .panel .product-list { padding: 0 0 12px; }
 
-  /* ---------- Save bar (bottom) ---------- */
-  .save-bar {
-    background: #fff;
-    border-top: 1px solid #e2e8f0;
-    padding: 14px 28px;
-  }
-  .save-bar .status {
-    display: flex; align-items: center; gap: 10px;
-    font-size: 14px;
-    color: #334155;
-  }
+  /* ---------- Save bar ---------- */
+  .save-bar { background: #fff; border-top: 1px solid #e2e8f0; padding: 14px 28px; }
+  .save-bar .status { display: flex; align-items: center; gap: 10px; font-size: 14px; color: #334155; }
   .save-bar .status .info-ic { color: #2563eb; flex-shrink: 0; }
   .save-bar .btn-success {
-    background: #1d4ed8;
-    border-color: #1d4ed8;
-    color: #fff;
-    padding: 12px 24px;
-    border-radius: 12px;
-    min-width: 170px;
+    background: #1d4ed8; border-color: #1d4ed8; color: #fff;
+    padding: 12px 24px; border-radius: 12px; min-width: 170px;
     box-shadow: 0 4px 12px rgba(29,78,216,0.25);
   }
   .save-bar .btn-success:hover:not(:disabled) { background: #1e40af; border-color: #1e40af; }
 
-  /* ---------- Tablet / small desktop (≤ 899px) ---------- */
+  /* Bars only belong to the check page */
+  body:not([data-page="check"]) .save-bar,
+  body:not([data-page="check"]) .selection-bar,
+  body:not([data-page="check"]) .fab { display: none !important; }
+
+  /* ---------- Report page ---------- */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin: 20px 28px 0;
+  }
+  .sum-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 14px;
+    padding: 16px 18px; box-shadow: 0 2px 8px rgba(15,23,42,0.04);
+  }
+  .sum-card .sl { font-size: 13px; color: #64748b; font-weight: 600; }
+  .sum-card .sv { font-size: 28px; font-weight: 700; margin-top: 6px; color: #0f1d36; }
+  .sum-card.ok .sv { color: #059669; }
+  .sum-card.short .sv { color: #dc2626; }
+  .sum-card.over .sv { color: #ea580c; }
+
+  .table-wrap {
+    margin: 16px 28px 0;
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 14px;
+    overflow-x: auto;
+  }
+  table.rpt { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.rpt th, table.rpt td { padding: 12px 14px; border-bottom: 1px solid #f1f5f9; text-align: left; }
+  table.rpt th { background: #f8fafc; color: #475569; font-weight: 600; font-size: 13px; }
+  table.rpt td.num, table.rpt th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  table.rpt tr:last-child td { border-bottom: none; }
+  .st { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+  .st.ok { background: #ecfdf5; color: #059669; }
+  .st.short { background: #fef2f2; color: #dc2626; }
+  .st.over { background: #fff7ed; color: #ea580c; }
+  .st.plain { background: #f1f5f9; color: #64748b; }
+  .rpt-empty { margin: 16px 28px 0; padding: 40px; text-align: center; color: #64748b; background: #fff; border: 1px dashed #cbd5e1; border-radius: 14px; }
+
+  /* ---------- Settings page ---------- */
+  .setting-list { display: flex; flex-direction: column; gap: 12px; margin: 20px 28px 0; }
+  .setting-card {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px 20px;
+  }
+  .setting-card .sc-title { font-size: 15px; font-weight: 600; color: #0f1d36; }
+  .setting-card .sc-desc { font-size: 13px; color: #64748b; margin-top: 4px; }
+  .setting-card .btn:disabled { opacity: 0.45; }
+
+  /* ---------- Tablet (≤ 899px) ---------- */
   @media (max-width: 899px) {
-    .sidebar { display: none; }
+    .sidebar {
+      transform: translateX(-100%);
+      box-shadow: 0 0 30px rgba(0,0,0,0.25);
+    }
+    body.drawer-open .sidebar { transform: translateX(0); }
+    body.drawer-open .side-overlay {
+      display: block;
+      position: fixed; inset: 0;
+      background: rgba(10,34,89,0.45);
+      z-index: 35;
+    }
+    .menu-btn { display: flex; margin-right: auto; }
     .main { margin-left: 0; }
-    .hero, .panel { margin-left: 14px; margin-right: 14px; }
+    .hero, .page-head, .panel, .setting-list, .table-wrap, .rpt-empty { margin-left: 14px; margin-right: 14px; }
     .stats-wrap { padding-left: 14px; padding-right: 14px; }
+    .summary-grid { margin-left: 14px; margin-right: 14px; grid-template-columns: repeat(2, 1fr); }
     .hero { margin-top: 14px; }
     .topbar { padding: 12px 16px; }
     .hero h2 { font-size: 22px; }
@@ -430,10 +413,7 @@
 
   @media (min-width: 900px) {
     .save-bar, .selection-bar {
-      left: 240px;
-      right: 0;
-      max-width: none;
-      margin: 0;
+      left: 240px; right: 0; max-width: none; margin: 0;
       transform: translateY(100%);
     }
     .save-bar { transform: none; }
@@ -445,25 +425,15 @@
   @media (max-width: 599px) {
     body { padding-bottom: 110px; }
 
-    .topbar {
-      padding: 10px 14px;
-      gap: 10px;
-      justify-content: space-between;
-    }
+    .topbar { padding: 10px 14px; gap: 10px; }
     .topbar .admin-badge { font-size: 11px; padding: 6px 10px; }
     .bell { width: 34px; height: 34px; }
     .user-chip span,
     .user-chip > svg:last-child { display: none; }
     .user-chip .avatar { width: 34px; height: 34px; }
-
     .notif-panel { top: 42px; }
 
-    .hero {
-      margin: 12px 14px 0;
-      padding: 14px 16px;
-      border-radius: 14px;
-      gap: 0;
-    }
+    .hero { margin: 12px 14px 0; padding: 14px 16px; border-radius: 14px; gap: 0; }
     .hero-icon { display: none; }
     .hero h2 { font-size: 19px; }
     .hero p { font-size: 12px; margin-top: 4px; }
@@ -471,11 +441,8 @@
     .stats-wrap { padding: 0; margin: 12px 14px 0; }
     .stats-wrap .stats { gap: 8px; }
     .stats-wrap .stat-box {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 8px;
-      padding: 12px 10px;
-      border-radius: 12px;
+      flex-direction: column; align-items: flex-start; gap: 8px;
+      padding: 12px 10px; border-radius: 12px;
     }
     .stats-wrap .stat-ic { width: 36px; height: 36px; }
     .stats-wrap .stat-ic svg { width: 18px; height: 18px; }
@@ -483,31 +450,37 @@
     .stats-wrap .stat-box .label { font-size: 11px; margin-bottom: 2px; line-height: 1.3; }
     .stats-wrap .stat-box .num { font-size: 22px; }
 
+    .quick-actions { margin-top: 14px; }
+    .quick-actions .btn { flex: 1; }
+
+    .page-head { flex-direction: column; align-items: stretch; margin-top: 12px; }
+    .page-head h3 { font-size: 18px; }
+    .page-actions .btn { flex: 1; }
+
     #readonlyBanner { margin: 12px 14px 0 !important; border-radius: 10px !important; }
 
-    .panel {
-      margin: 12px 14px 0;
-      padding: 14px 12px 6px;
-      border-radius: 14px;
-    }
-    .panel-head {
-      flex-direction: column;
-      align-items: stretch;
-      gap: 12px;
-      margin-bottom: 12px;
-    }
+    .panel { margin: 12px 14px 0; padding: 14px 12px 6px; border-radius: 14px; }
+    .panel-head { flex-direction: column; align-items: stretch; gap: 12px; margin-bottom: 12px; }
     .panel-title { gap: 10px; }
     .panel-title .pt-icon { width: 40px; height: 40px; }
     .panel-title h3 { font-size: 16px; }
     .panel-title p { font-size: 12px; }
     .panel-head .btn-primary { width: 100%; padding: 12px; }
-
     .panel .file-bar { padding: 12px; }
     .panel .file-bar .file-name { font-size: 14px; }
     .panel .search-bar input { padding: 12px 14px 12px 42px; font-size: 14px; }
     .panel .tabs { padding-bottom: 10px; }
     .panel .tab { padding: 8px 12px; font-size: 12px; }
     .panel .actions-bar { padding-bottom: 10px; }
+
+    .summary-grid { gap: 8px; margin-top: 12px; }
+    .sum-card { padding: 12px; }
+    .sum-card .sv { font-size: 22px; }
+    table.rpt { font-size: 12px; min-width: 520px; }
+    table.rpt th, table.rpt td { padding: 10px 8px; }
+
+    .setting-card { padding: 14px; flex-direction: column; align-items: stretch; }
+    .setting-card .btn { width: 100%; }
 
     .product-list { padding-bottom: 8px; }
     .product-card { padding: 14px 12px; }
@@ -526,12 +499,19 @@
     .fab { right: 16px; bottom: 84px; width: 50px; height: 50px; }
     .toast { bottom: 96px; }
   }
+
+  /* ---------- Print (report) ---------- */
+  @media print {
+    .sidebar, .topbar, .page-actions, .save-bar, .fab, .selection-bar { display: none !important; }
+    .main { margin: 0; }
+    body { background: #fff; }
+  }
 </style>
 </head>
-<body>
+<body data-page="home">
 
 <!-- ============ Sidebar ============ -->
-<aside class="sidebar">
+<aside class="sidebar" id="sidebar">
   <div class="side-brand">
     <svg class="logo-cube" viewBox="0 0 64 64" fill="none" aria-hidden="true">
       <path d="M32 4 56 17v30L32 60 8 47V17L32 4Z" fill="#3b82f6"/>
@@ -543,23 +523,23 @@
     <p>ระบบเช็คสต็อก</p>
   </div>
   <nav class="side-nav">
-    <a class="nav-item active" href="#" onclick="return false;">
+    <a class="nav-item" href="#home" data-page="home">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1V10.5Z"/></svg>
       หน้าหลัก
     </a>
-    <a class="nav-item" href="#" onclick="return false;">
+    <a class="nav-item" href="#check" data-page="check">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="18" rx="2"/><path d="M9 4V3h6v1"/><path d="m9 13 2 2 4-4"/></svg>
       เช็คสต็อก
     </a>
-    <a class="nav-item" href="#" onclick="return false;">
+    <a class="nav-item" href="#report" data-page="report">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V11M10 20V4M16 20v-7M22 20H2"/></svg>
       รายงาน
     </a>
-    <a class="nav-item" href="#" onclick="return false;">
+    <a class="nav-item" href="#settings" data-page="settings">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>
       การตั้งค่า
     </a>
-    <a class="nav-item" href="#" onclick="return false;">
+    <a class="nav-item" href="#logout" data-page="logout">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
       ออกจากระบบ
     </a>
@@ -572,11 +552,16 @@
     </div>
   </div>
 </aside>
+<div class="side-overlay" id="sideOverlay"></div>
 
 <div class="main">
 
   <!-- ============ Topbar ============ -->
   <div class="topbar">
+    <button class="menu-btn" id="menuBtn" type="button" aria-label="เปิดเมนู">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+
     <div class="admin-badge" id="adminBadge" onclick="handleAdminClick()">
       <span id="adminIcon">🔓</span>
       <span id="adminText">โหมดทั่วไป</span>
@@ -602,134 +587,210 @@
     </div>
   </div>
 
-  <!-- ============ Hero ============ -->
-  <div class="hero">
-    <div class="hero-icon">
-      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="18" rx="2"/><path d="M9 4V3h6v1"/><path d="M9 11h6M9 15h6"/></svg>
-    </div>
-    <div>
-      <h2>ระบบเช็คสต็อก</h2>
-      <p>ตรวจสอบสต็อกได้อย่างรวดเร็ว แม่นยำ และเป็นระบบ</p>
-    </div>
-  </div>
-
-  <!-- ============ Stats ============ -->
-  <div class="stats-wrap">
-    <div class="stats">
-      <div class="stat-box">
-        <div class="stat-ic">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M21 8 12 3 3 8v8l9 5 9-5V8Z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>
-        </div>
-        <div class="stat-txt">
-          <div class="label">สินค้าทั้งหมด</div>
-          <div class="num" id="statTotal">0</div>
-        </div>
-        <svg class="spark" viewBox="0 0 120 50" preserveAspectRatio="none" aria-hidden="true">
-          <defs><linearGradient id="g1" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#2563eb" stop-opacity="0.2"/><stop offset="1" stop-color="#2563eb" stop-opacity="0"/></linearGradient></defs>
-          <path d="M0 42 L20 36 L40 40 L60 26 L80 30 L100 14 L120 8 L120 50 L0 50Z" fill="url(#g1)"/>
-          <polyline points="0,42 20,36 40,40 60,26 80,30 100,14 120,8" fill="none" stroke="#2563eb" stroke-width="2"/>
-        </svg>
+  <!-- ============ PAGE: หน้าหลัก ============ -->
+  <section class="page" data-page="home">
+    <div class="hero">
+      <div class="hero-icon">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="18" rx="2"/><path d="M9 4V3h6v1"/><path d="M9 11h6M9 15h6"/></svg>
       </div>
-      <div class="stat-box counted">
-        <div class="stat-ic">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 10 17 19 7"/></svg>
-        </div>
-        <div class="stat-txt">
-          <div class="label">นับแล้ว</div>
-          <div class="num" id="statCounted">0</div>
-        </div>
-        <svg class="spark" viewBox="0 0 120 50" preserveAspectRatio="none" aria-hidden="true">
-          <defs><linearGradient id="g2" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#059669" stop-opacity="0.2"/><stop offset="1" stop-color="#059669" stop-opacity="0"/></linearGradient></defs>
-          <path d="M0 40 L20 42 L40 30 L60 34 L80 22 L100 24 L120 10 L120 50 L0 50Z" fill="url(#g2)"/>
-          <polyline points="0,40 20,42 40,30 60,34 80,22 100,24 120,10" fill="none" stroke="#059669" stroke-width="2"/>
-        </svg>
-      </div>
-      <div class="stat-box diff">
-        <div class="stat-ic">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/></svg>
-        </div>
-        <div class="stat-txt">
-          <div class="label">รายการต่าง</div>
-          <div class="num" id="statDiff">0</div>
-        </div>
-        <svg class="spark" viewBox="0 0 120 50" preserveAspectRatio="none" aria-hidden="true">
-          <defs><linearGradient id="g3" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#ea580c" stop-opacity="0.2"/><stop offset="1" stop-color="#ea580c" stop-opacity="0"/></linearGradient></defs>
-          <path d="M0 44 L20 40 L40 42 L60 34 L80 36 L100 26 L120 18 L120 50 L0 50Z" fill="url(#g3)"/>
-          <polyline points="0,44 20,40 40,42 60,34 80,36 100,26 120,18" fill="none" stroke="#ea580c" stroke-width="2"/>
-        </svg>
-      </div>
-    </div>
-  </div>
-
-  <!-- ============ Readonly Banner ============ -->
-  <div id="readonlyBanner" class="readonly-banner" style="display:none;">
-    👤 โหมดทั่วไป — นับสต๊อกได้ แต่ไม่สามารถเพิ่ม/แก้ไข/ลบสินค้าได้
-  </div>
-
-  <!-- ============ Panel ============ -->
-  <section class="panel">
-
-    <div class="panel-head">
-      <div class="panel-title">
-        <div class="pt-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M8 13h8M8 17h5"/></svg>
-        </div>
-        <div>
-          <h3>เช็คสต็อกไฟล์</h3>
-          <p>เลือกไฟล์ Excel เพื่ออัปโหลดข้อมูลสต๊อกของคุณ</p>
-        </div>
-      </div>
-      <button class="btn btn-primary" onclick="openExcelFile()" id="openFileBtn">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 16l-4-4-4 4"/><path d="M12 12v9"/><path d="M20 16.6A5 5 0 0 0 18 7h-1.3A8 8 0 1 0 4 15.3"/></svg>
-        เปลี่ยนไฟล์
-      </button>
-    </div>
-
-    <div class="file-bar" id="fileBar">
-      <div class="file-info">
-        <div class="file-icon connected" id="fileIcon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 10 17 19 7"/></svg>
-        </div>
-        <div style="min-width:0;flex:1;">
-          <div class="file-name" id="fileName">ยังไม่ได้เชื่อมต่อไฟล์</div>
-          <div class="file-sub" id="fileSub">กรุณาเลือกไฟล์ Excel เพื่อเริ่มต้น</div>
-        </div>
-      </div>
-      <span class="file-close" aria-hidden="true">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
-      </span>
-    </div>
-
-    <!-- Search -->
-    <div class="search-bar">
-      <div class="search-wrapper">
-        <span class="icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-        </span>
-        <input type="text" id="searchInput" placeholder="ค้นหาชื่อสินค้า หรือ SKU...">
+      <div>
+        <h2>ระบบเช็คสต็อก</h2>
+        <p>ตรวจสอบสต็อกได้อย่างรวดเร็ว แม่นยำ และเป็นระบบ</p>
       </div>
     </div>
 
-    <!-- Tabs -->
-    <div class="tabs">
-      <div class="tab active" data-tab="all">ทั้งหมด <span class="count-badge" id="tabCountAll">0</span></div>
-      <div class="tab" data-tab="pending">ยังไม่บันทึก <span class="count-badge" id="tabCountPending">0</span></div>
-      <div class="tab" data-tab="done">มีแล้ว <span class="count-badge" id="tabCountDone">0</span></div>
-      <div class="tab" data-tab="diff">ขาด <span class="count-badge" id="tabCountDiff">0</span></div>
+    <div class="stats-wrap">
+      <div class="stats">
+        <div class="stat-box">
+          <div class="stat-ic">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M21 8 12 3 3 8v8l9 5 9-5V8Z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>
+          </div>
+          <div class="stat-txt">
+            <div class="label">สินค้าทั้งหมด</div>
+            <div class="num" id="statTotal">0</div>
+          </div>
+          <svg class="spark" viewBox="0 0 120 50" preserveAspectRatio="none" aria-hidden="true">
+            <defs><linearGradient id="g1" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#2563eb" stop-opacity="0.2"/><stop offset="1" stop-color="#2563eb" stop-opacity="0"/></linearGradient></defs>
+            <path d="M0 42 L20 36 L40 40 L60 26 L80 30 L100 14 L120 8 L120 50 L0 50Z" fill="url(#g1)"/>
+            <polyline points="0,42 20,36 40,40 60,26 80,30 100,14 120,8" fill="none" stroke="#2563eb" stroke-width="2"/>
+          </svg>
+        </div>
+        <div class="stat-box counted">
+          <div class="stat-ic">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 10 17 19 7"/></svg>
+          </div>
+          <div class="stat-txt">
+            <div class="label">นับแล้ว</div>
+            <div class="num" id="statCounted">0</div>
+          </div>
+          <svg class="spark" viewBox="0 0 120 50" preserveAspectRatio="none" aria-hidden="true">
+            <defs><linearGradient id="g2" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#059669" stop-opacity="0.2"/><stop offset="1" stop-color="#059669" stop-opacity="0"/></linearGradient></defs>
+            <path d="M0 40 L20 42 L40 30 L60 34 L80 22 L100 24 L120 10 L120 50 L0 50Z" fill="url(#g2)"/>
+            <polyline points="0,40 20,42 40,30 60,34 80,22 100,24 120,10" fill="none" stroke="#059669" stroke-width="2"/>
+          </svg>
+        </div>
+        <div class="stat-box diff">
+          <div class="stat-ic">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/></svg>
+          </div>
+          <div class="stat-txt">
+            <div class="label">รายการต่าง</div>
+            <div class="num" id="statDiff">0</div>
+          </div>
+          <svg class="spark" viewBox="0 0 120 50" preserveAspectRatio="none" aria-hidden="true">
+            <defs><linearGradient id="g3" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#ea580c" stop-opacity="0.2"/><stop offset="1" stop-color="#ea580c" stop-opacity="0"/></linearGradient></defs>
+            <path d="M0 44 L20 40 L40 42 L60 34 L80 36 L100 26 L120 18 L120 50 L0 50Z" fill="url(#g3)"/>
+            <polyline points="0,44 20,40 40,42 60,34 80,36 100,26 120,18" fill="none" stroke="#ea580c" stroke-width="2"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="quick-actions">
+        <button class="btn btn-primary" onclick="go('check')">เริ่มเช็คสต็อก</button>
+        <button class="btn btn-secondary" onclick="go('report')">ดูรายงาน</button>
+      </div>
     </div>
-
-    <!-- Actions (admin) -->
-    <div class="actions-bar">
-      <button class="btn btn-secondary admin-only" onclick="toggleSelectMode()" disabled id="selectModeBtn">☑️ เลือกลบ</button>
-      <button class="btn btn-secondary admin-only" onclick="resetCount()" disabled>🔄 รีเซ็ต</button>
-      <button class="btn btn-danger admin-only" onclick="clearAll()" disabled>🗑️ ลบทั้งหมด</button>
-      <button class="btn btn-secondary admin-only" onclick="openChangePinModal()" disabled>🔑 เปลี่ยน PIN</button>
-    </div>
-
-    <!-- Product List -->
-    <div class="product-list" id="productList"></div>
-
   </section>
+
+  <!-- ============ PAGE: เช็คสต็อก ============ -->
+  <section class="page" data-page="check">
+    <div id="readonlyBanner" class="readonly-banner" style="display:none;">
+      👤 โหมดทั่วไป — นับสต๊อกได้ แต่ไม่สามารถเพิ่ม/แก้ไข/ลบสินค้าได้
+    </div>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div class="panel-title">
+          <div class="pt-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M8 13h8M8 17h5"/></svg>
+          </div>
+          <div>
+            <h3>เช็คสต็อกไฟล์</h3>
+            <p>เลือกไฟล์ Excel เพื่ออัปโหลดข้อมูลสต๊อกของคุณ</p>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="openExcelFile()" id="openFileBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 16l-4-4-4 4"/><path d="M12 12v9"/><path d="M20 16.6A5 5 0 0 0 18 7h-1.3A8 8 0 1 0 4 15.3"/></svg>
+          เปลี่ยนไฟล์
+        </button>
+      </div>
+
+      <div class="file-bar" id="fileBar">
+        <div class="file-info">
+          <div class="file-icon connected" id="fileIcon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 10 17 19 7"/></svg>
+          </div>
+          <div style="min-width:0;flex:1;">
+            <div class="file-name" id="fileName">ยังไม่ได้เชื่อมต่อไฟล์</div>
+            <div class="file-sub" id="fileSub">กรุณาเลือกไฟล์ Excel เพื่อเริ่มต้น</div>
+          </div>
+        </div>
+        <span class="file-close" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </span>
+      </div>
+
+      <div class="search-bar">
+        <div class="search-wrapper">
+          <span class="icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          </span>
+          <input type="text" id="searchInput" placeholder="ค้นหาชื่อสินค้า หรือ SKU...">
+        </div>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active" data-tab="all">ทั้งหมด <span class="count-badge" id="tabCountAll">0</span></div>
+        <div class="tab" data-tab="pending">ยังไม่บันทึก <span class="count-badge" id="tabCountPending">0</span></div>
+        <div class="tab" data-tab="done">มีแล้ว <span class="count-badge" id="tabCountDone">0</span></div>
+        <div class="tab" data-tab="diff">ขาด <span class="count-badge" id="tabCountDiff">0</span></div>
+      </div>
+
+      <div class="actions-bar">
+        <button class="btn btn-secondary admin-only" onclick="toggleSelectMode()" disabled id="selectModeBtn">☑️ เลือกลบ</button>
+        <button class="btn btn-secondary admin-only" onclick="resetCount()" disabled>🔄 รีเซ็ต</button>
+        <button class="btn btn-danger admin-only" onclick="clearAll()" disabled>🗑️ ลบทั้งหมด</button>
+        <button class="btn btn-secondary admin-only" onclick="openChangePinModal()" disabled>🔑 เปลี่ยน PIN</button>
+      </div>
+
+      <div class="product-list" id="productList"></div>
+    </section>
+  </section>
+
+  <!-- ============ PAGE: รายงาน ============ -->
+  <section class="page" data-page="report">
+    <div class="page-head">
+      <div>
+        <h3>รายงานสต๊อก</h3>
+        <p>สรุปจากข้อมูลล่าสุดในหน้าเช็คสต็อก</p>
+      </div>
+      <div class="page-actions">
+        <button class="btn btn-secondary" onclick="window.print()">🖨️ พิมพ์</button>
+        <button class="btn btn-primary" onclick="exportReportCsv()">⬇️ ส่งออก CSV</button>
+      </div>
+    </div>
+
+    <div class="summary-grid">
+      <div class="sum-card"><div class="sl">รายการทั้งหมด</div><div class="sv" id="rpTotal">0</div></div>
+      <div class="sum-card ok"><div class="sl">ครบ</div><div class="sv" id="rpOk">0</div></div>
+      <div class="sum-card short"><div class="sl">ขาด</div><div class="sv" id="rpShort">0</div></div>
+      <div class="sum-card over"><div class="sl">เกิน</div><div class="sv" id="rpOver">0</div></div>
+    </div>
+
+    <div class="table-wrap" id="rpTableWrap">
+      <table class="rpt">
+        <thead>
+          <tr>
+            <th>สินค้า</th>
+            <th>SKU</th>
+            <th class="num">ในระบบ</th>
+            <th class="num">นับได้</th>
+            <th class="num">ส่วนต่าง</th>
+            <th>สถานะ</th>
+          </tr>
+        </thead>
+        <tbody id="rpBody"></tbody>
+      </table>
+    </div>
+    <div class="rpt-empty" id="rpEmpty" style="display:none;">
+      ยังไม่มีข้อมูล กรุณาเปิดไฟล์ในหน้า "เช็คสต็อก" ก่อน
+    </div>
+  </section>
+
+  <!-- ============ PAGE: การตั้งค่า ============ -->
+  <section class="page" data-page="settings">
+    <div class="page-head">
+      <div>
+        <h3>การตั้งค่า</h3>
+        <p>จัดการโหมดผู้ดูแลและไฟล์ที่ใช้งาน</p>
+      </div>
+    </div>
+
+    <div class="setting-list">
+      <div class="setting-card">
+        <div>
+          <div class="sc-title">โหมดผู้ดูแล</div>
+          <div class="sc-desc" id="setAdminState">โหมดทั่วไป</div>
+        </div>
+        <button class="btn btn-secondary" onclick="handleAdminClick()">สลับโหมด</button>
+      </div>
+      <div class="setting-card">
+        <div>
+          <div class="sc-title">เปลี่ยนรหัส PIN</div>
+          <div class="sc-desc">ต้องเข้าโหมดผู้ดูแลก่อน</div>
+        </div>
+        <button class="btn btn-secondary" id="setPinBtn" onclick="settingsChangePin()" disabled>เปลี่ยน PIN</button>
+      </div>
+      <div class="setting-card">
+        <div>
+          <div class="sc-title">ไฟล์ที่ใช้งานอยู่</div>
+          <div class="sc-desc" id="setFileName">ยังไม่ได้เชื่อมต่อไฟล์</div>
+        </div>
+        <button class="btn btn-secondary" onclick="openExcelFile()">เปลี่ยนไฟล์</button>
+      </div>
+    </div>
+  </section>
+
 </div>
 
 <button class="fab hidden" id="fabAdd" onclick="openAddModal()">+</button>
@@ -840,23 +901,194 @@
 <!-- ==== เพิ่มสำหรับซิงก์กับ Google Sheets (ไฟล์ sync.js ต้องวางข้างๆ app.js) ==== -->
 <script src="jap.js"></script>
 
-<!-- ============ Notification logic ============ -->
+<!-- ============ Navigation, notifications, report, settings ============ -->
 <script>
 (function () {
-  const bellBtn     = document.getElementById('bellBtn');
-  const bellCount   = document.getElementById('bellCount');
-  const panel       = document.getElementById('notifPanel');
-  const list        = document.getElementById('notifList');
+  const PAGES = ['home', 'check', 'report', 'settings'];
   const productList = document.getElementById('productList');
+  const sidebar     = document.getElementById('sidebar');
+  const menuBtn     = document.getElementById('menuBtn');
+  const overlay     = document.getElementById('sideOverlay');
+  const toastEl     = document.getElementById('toast');
 
+  // ---------- helpers ----------
   function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, c => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
     })[c]);
   }
+  function uiToast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(uiToast._t);
+    uiToast._t = setTimeout(() => toastEl.classList.remove('show'), 2200);
+  }
+  function callIf(name, fallbackMsg) {
+    if (typeof window[name] === 'function') { window[name](); return true; }
+    uiToast(fallbackMsg || 'ฟังก์ชันนี้ยังไม่พร้อมใช้งาน');
+    return false;
+  }
+  function isAdmin() {
+    return document.getElementById('adminBadge').classList.contains('unlocked');
+  }
 
-  function collectIssues() {
-    return Array.from(productList.querySelectorAll('.product-card.short, .product-card.over'))
+  // ---------- page routing ----------
+  function currentFromHash() {
+    const h = location.hash.slice(1);
+    return PAGES.includes(h) ? h : 'home';
+  }
+
+  function showPage(name) {
+    document.body.dataset.page = name;
+    document.querySelectorAll('.page').forEach(p =>
+      p.classList.toggle('active', p.dataset.page === name));
+    document.querySelectorAll('.nav-item').forEach(a =>
+      a.classList.toggle('active', a.dataset.page === name));
+    closeDrawer();
+    if (name === 'report') renderReport();
+    if (name === 'settings') syncSettings();
+    window.scrollTo(0, 0);
+  }
+
+  function go(name) {
+    if (location.hash === '#' + name) showPage(name);
+    else location.hash = name;
+  }
+  window.go = go;
+
+  window.addEventListener('hashchange', () => showPage(currentFromHash()));
+
+  // ---------- drawer (mobile) ----------
+  function openDrawer()  { document.body.classList.add('drawer-open'); }
+  function closeDrawer() { document.body.classList.remove('drawer-open'); }
+  menuBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    document.body.classList.toggle('drawer-open');
+  });
+  overlay.addEventListener('click', closeDrawer);
+
+  // ---------- sidebar clicks ----------
+  document.querySelectorAll('.nav-item').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const target = a.dataset.page;
+      if (target === 'logout') { logout(); return; }
+      go(target);
+      closeDrawer();
+    });
+  });
+
+  function logout() {
+    if (!confirm('ต้องการออกจากระบบหรือไม่?')) return;
+    if (isAdmin()) document.getElementById('adminBadge').click();
+    uiToast('ออกจากระบบแล้ว');
+    go('home');
+  }
+
+  // ---------- settings ----------
+  function syncSettings() {
+    const admin = isAdmin();
+    document.getElementById('setAdminState').textContent =
+      admin ? 'โหมดผู้ดูแล (เปิดอยู่)' : 'โหมดทั่วไป';
+    document.getElementById('setPinBtn').disabled = !admin;
+    document.getElementById('setFileName').textContent =
+      document.getElementById('fileName').textContent;
+  }
+  window.settingsChangePin = function () {
+    if (!isAdmin()) { uiToast('กรุณาเข้าโหมดผู้ดูแลก่อน'); return; }
+    callIf('openChangePinModal');
+  };
+
+  // keep settings in sync while open
+  new MutationObserver(() => {
+    if (document.body.dataset.page === 'settings') syncSettings();
+  }).observe(document.getElementById('adminBadge'), { attributes: true, childList: true, subtree: true, characterData: true });
+  new MutationObserver(() => {
+    if (document.body.dataset.page === 'settings') syncSettings();
+  }).observe(document.getElementById('fileName'), { childList: true, characterData: true, subtree: true });
+
+  // ---------- report ----------
+  function readCards() {
+    return Array.from(productList.querySelectorAll('.product-card')).map(card => {
+      const name    = card.querySelector('.product-name')?.textContent.trim() || '-';
+      const sku     = card.querySelector('.product-sku')?.textContent.trim() || '';
+      const sysTxt  = card.querySelector('.info-value')?.textContent || '0';
+      const system  = parseInt(sysTxt.replace(/[^\d-]/g, ''), 10) || 0;
+      const counted = parseInt(card.querySelector('.count-controls input')?.value, 10) || 0;
+      let status = 'plain', label = 'ยังไม่นับ';
+      if (card.classList.contains('short')) { status = 'short'; label = 'ขาด'; }
+      else if (card.classList.contains('over')) { status = 'over'; label = 'เกิน'; }
+      else if (card.classList.contains('ok')) { status = 'ok'; label = 'ครบ'; }
+      return { name, sku, system, counted, diff: counted - system, status, label };
+    });
+  }
+
+  function renderReport() {
+    const rows = readCards();
+    const body = document.getElementById('rpBody');
+    const empty = document.getElementById('rpEmpty');
+    const wrap  = document.getElementById('rpTableWrap');
+
+    document.getElementById('rpTotal').textContent = rows.length;
+    document.getElementById('rpOk').textContent    = rows.filter(r => r.status === 'ok').length;
+    document.getElementById('rpShort').textContent = rows.filter(r => r.status === 'short').length;
+    document.getElementById('rpOver').textContent  = rows.filter(r => r.status === 'over').length;
+
+    if (!rows.length) {
+      empty.style.display = '';
+      wrap.style.display = 'none';
+      body.innerHTML = '';
+      return;
+    }
+    empty.style.display = 'none';
+    wrap.style.display = '';
+
+    body.innerHTML = rows.map(r => {
+      const sign = r.diff > 0 ? '+' : '';
+      return `<tr>
+        <td>${escapeHtml(r.name)}</td>
+        <td>${escapeHtml(r.sku)}</td>
+        <td class="num">${r.system}</td>
+        <td class="num">${r.counted}</td>
+        <td class="num">${sign}${r.diff}</td>
+        <td><span class="st ${r.status}">${r.label}</span></td>
+      </tr>`;
+    }).join('');
+  }
+
+  window.exportReportCsv = function () {
+    const rows = readCards();
+    if (!rows.length) { uiToast('ยังไม่มีข้อมูลให้ส่งออก'); return; }
+    const header = ['สินค้า', 'SKU', 'ในระบบ', 'นับได้', 'ส่วนต่าง', 'สถานะ'];
+    const lines = [header, ...rows.map(r => [r.name, r.sku, r.system, r.counted, r.diff, r.label])]
+      .map(cols => cols.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','));
+    const blob = new Blob(['\uFEFF' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+    const d = new Date();
+    const stamp = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `stockflow-report-${stamp}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+  };
+
+  // report follows changes in the list while it is open
+  productList.addEventListener('input', () => {
+    if (document.body.dataset.page === 'report') renderReport();
+  });
+  new MutationObserver(() => {
+    if (document.body.dataset.page === 'report') renderReport();
+  }).observe(productList, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+
+  // ---------- notifications (bell) ----------
+  const bellBtn   = document.getElementById('bellBtn');
+  const bellCount = document.getElementById('bellCount');
+  const panel     = document.getElementById('notifPanel');
+  const list      = document.getElementById('notifList');
+
+  function renderBell() {
+    const issues = Array.from(productList.querySelectorAll('.product-card.short, .product-card.over'))
       .map(card => ({
         card,
         name:  card.querySelector('.product-name')?.textContent.trim() || '-',
@@ -864,10 +1096,6 @@
         badge: card.querySelector('.diff-badge')?.textContent.trim() || '',
         type:  card.classList.contains('short') ? 'short' : 'over'
       }));
-  }
-
-  function render() {
-    const issues = collectIssues();
 
     bellCount.textContent = issues.length;
     bellCount.style.display = issues.length ? 'flex' : 'none';
@@ -877,7 +1105,6 @@
       list.innerHTML = '<div class="notif-empty">ไม่มีรายการที่ขาดหรือเกิน</div>';
       return;
     }
-
     issues.forEach(it => {
       const row = document.createElement('div');
       row.className = 'notif-item';
@@ -887,15 +1114,16 @@
            <div class="sku">${escapeHtml(it.sku)}</div>
          </div>
          <div class="tag-${it.type}">${escapeHtml(it.badge)}</div>`;
-
       row.addEventListener('click', () => {
         panel.hidden = true;
-        it.card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        it.card.classList.remove('card-flash');
-        void it.card.offsetWidth;
-        it.card.classList.add('card-flash');
+        if (document.body.dataset.page !== 'check') go('check');
+        setTimeout(() => {
+          it.card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          it.card.classList.remove('card-flash');
+          void it.card.offsetWidth;
+          it.card.classList.add('card-flash');
+        }, 80);
       });
-
       list.appendChild(row);
     });
   }
@@ -903,23 +1131,20 @@
   bellBtn.addEventListener('click', e => {
     e.stopPropagation();
     panel.hidden = !panel.hidden;
-    if (!panel.hidden) render();
+    if (!panel.hidden) renderBell();
   });
 
   document.addEventListener('click', e => {
-    if (!panel.contains(e.target) && !bellBtn.contains(e.target)) {
-      panel.hidden = true;
-    }
+    if (!panel.contains(e.target) && !bellBtn.contains(e.target)) panel.hidden = true;
   });
 
-  new MutationObserver(render).observe(productList, {
-    childList: true,
-    subtree: true,
-    attributes: true,
-    attributeFilter: ['class']
+  new MutationObserver(renderBell).observe(productList, {
+    childList: true, subtree: true, attributes: true, attributeFilter: ['class']
   });
 
-  render();
+  // ---------- init ----------
+  showPage(currentFromHash());
+  renderBell();
 })();
 </script>
 </body>

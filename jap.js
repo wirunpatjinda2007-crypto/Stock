@@ -2,22 +2,22 @@
    StockFlow — Cloud Sync (sync.js)
    ============================================ */
 
-const SUPABASE_URL = 'วาง_PROJECT_URL_ที่นี่';
-const SUPABASE_KEY = 'วาง_ANON_PUBLIC_KEY_ที่นี่';
+const SUPABASE_URL = 'https://jjifrsqvftsorwyupowt.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_Z9Xpb1A5KwO89l6Z8CosSw_RjSc1MHv';
 
 let isSyncingFromCloud = false;
 
-// ดึงข้อมูลจาก Supabase มาแสดงบนหน้าเว็บ
+// 1. ดึงข้อมูลจาก Supabase มาแสดงบนหน้าเว็บ
 async function pullFromCloud() {
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/stock_state?id=eq.main&select=*`, {
       headers: {
-        'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`
+        'apikey': SUPABASE_KEY
       }
     });
+    if (!res.ok) return;
     const data = await res.json();
-    if (data && data.length > 0) {
+    if (Array.isArray(data) && data.length > 0) {
       isSyncingFromCloud = true;
       products = Array.isArray(data[0].products) ? data[0].products : [];
       if (data[0].admin_pin) {
@@ -33,19 +33,19 @@ async function pullFromCloud() {
   }
 }
 
-// ส่งข้อมูลขึ้น Supabase เมื่อแอดมินเพิ่ม/แก้ไข หรือมีการนับสต๊อก
+// 2. ส่งข้อมูลขึ้น Supabase เมื่อแอดมินเพิ่ม/แก้ไข หรือมีการนับสต๊อก
 async function pushToCloud() {
   if (isSyncingFromCloud) return;
   try {
-    await fetch(`${SUPABASE_URL}/rest/v1/stock_state?id=eq.main`, {
-      method: 'PATCH',
+    await fetch(`${SUPABASE_URL}/rest/v1/stock_state?on_conflict=id`, {
+      method: 'POST',
       headers: {
         'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`,
         'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
+        'Prefer': 'resolution=merge-duplicates,return=minimal'
       },
       body: JSON.stringify({
+        id: 'main',
         products: products,
         admin_pin: adminPin,
         updated_at: new Date().toISOString()
@@ -56,7 +56,7 @@ async function pushToCloud() {
   }
 }
 
-// เชื่อมเข้ากับฟังก์ชันเดิมของ app.js อัตโนมัติ
+// 3. เชื่อมเข้ากับฟังก์ชันเดิมของ app.js อัตโนมัติ
 const originalSaveDataToCache = saveDataToCache;
 saveDataToCache = function() {
   originalSaveDataToCache();

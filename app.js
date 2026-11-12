@@ -400,6 +400,58 @@ function saveAdminPin(p) {
 }
 
 // ============ Render ============
+// Donut (status) + per-category bars on the home page. Pure SVG/CSS, no libraries.
+function renderSummaryCharts() {
+  const donutOk = document.getElementById('donutOk');
+  if (!donutOk) return;
+
+  const total = products.length;
+  let ok = 0, off = 0, pending = 0;
+  products.forEach(p => {
+    const d = getDiff(p);
+    if (d === null) pending++;
+    else if (d === 0) ok++;
+    else off++;
+  });
+
+  const C = 2 * Math.PI * 46; // circumference ≈ 289
+  const okLen = total ? (ok / total) * C : 0;
+  const offLen = total ? (off / total) * C : 0;
+  donutOk.setAttribute('stroke-dasharray', `${okLen} ${C}`);
+  document.getElementById('donutDiff').setAttribute('stroke-dasharray', `${offLen} ${C}`);
+  document.getElementById('donutDiff').setAttribute('stroke-dashoffset', `${-okLen}`);
+  const pct = total ? Math.round((ok + off) / total * 100) : 0;
+  document.getElementById('donutPct').textContent = pct + '%';
+  document.getElementById('legOk').textContent = ok;
+  document.getElementById('legDiff').textContent = off;
+  document.getElementById('legPending').textContent = pending;
+
+  // Category bars: total items vs counted items per category
+  const groups = {};
+  products.forEach(p => {
+    const cat = (p.category || '').trim() || DEFAULT_CATEGORY;
+    const g = groups[cat] || (groups[cat] = { total: 0, counted: 0 });
+    g.total++;
+    const d = getDiff(p);
+    if (d !== null) g.counted++;
+  });
+  const box = document.getElementById('catBars');
+  const cats = Object.keys(groups).sort((a, b) => a.localeCompare(b, 'th'));
+  if (!cats.length) {
+    box.innerHTML = '<div class="cat-empty">ยังไม่มีสินค้า</div>';
+    return;
+  }
+  box.innerHTML = cats.map(c => {
+    const g = groups[c];
+    const pct = g.total ? Math.round(g.counted / g.total * 100) : 0;
+    return `
+      <div>
+        <div class="cat-bar-head"><span>${escapeHtml(c)}</span><span>${g.counted}/${g.total} (${pct}%)</span></div>
+        <div class="cat-bar-track"><div class="cat-bar-fill" style="width:${pct}%"></div></div>
+      </div>`;
+  }).join('');
+}
+
 function renderStats() {
   const total = products.length;
   const counted = products.filter(p => p.counted !== null && p.counted !== '' && p.counted !== undefined).length;
@@ -411,6 +463,7 @@ function renderStats() {
   document.getElementById('statTotal').textContent = total;
   document.getElementById('statCounted').textContent = counted;
   document.getElementById('statDiff').textContent = diff;
+  renderSummaryCharts();
 
   const pending = total - counted;
   document.getElementById('tabCountAll').textContent = total;

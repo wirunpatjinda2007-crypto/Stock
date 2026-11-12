@@ -22,6 +22,8 @@ let fileHasPermission = false;
 
 // Excel column name for category (falls back to Thai header 'หมวดหมู่')
 const CAT_COL = (CONFIG.EXCEL_COLUMNS && CONFIG.EXCEL_COLUMNS.CATEGORY) || 'หมวดหมู่';
+// Excel column name for unit of measure (e.g. ขวด, แพ็ค)
+const UNIT_COL = (CONFIG.EXCEL_COLUMNS && CONFIG.EXCEL_COLUMNS.UNIT) || 'หน่วยนับ';
 const DEFAULT_CATEGORY = 'ไม่ระบุ';
 
 // ============ Storage ============
@@ -100,6 +102,7 @@ async function parseExcelFile(file) {
           name: row[c.NAME] || 'ไม่มีชื่อ',
           sku: row[c.SKU] || '',
           category: String(row[CAT_COL] || '').trim(),
+          unit: String(row[UNIT_COL] || '').trim(),
           system: parseInt(row[c.SYSTEM]) || 0,
           counted: (row[c.COUNTED] !== undefined && row[c.COUNTED] !== '') ? parseInt(row[c.COUNTED]) : null
         }));
@@ -148,6 +151,7 @@ async function saveToFile() {
         [c.NAME]: p.name,
         [c.SKU]: p.sku || '',
         [CAT_COL]: p.category || '',
+        [UNIT_COL]: p.unit || '',
         [c.SYSTEM]: p.system,
         [c.COUNTED]: (p.counted === null || p.counted === '') ? '' : p.counted,
         [c.DIFF]: d === null ? '' : d,
@@ -477,6 +481,11 @@ function renderList() {
           ${diffHtml}
         </div>
         <div class="product-info">
+          ${p.unit ? `
+          <div class="info-item">
+            <span class="info-label">หน่วย</span>
+            <span class="info-value">${escapeHtml(p.unit)}</span>
+          </div>` : ''}
           <div class="info-item">
             <span class="info-label">ในระบบ</span>
             <span class="info-value">${p.system}</span>
@@ -636,6 +645,7 @@ function openAddModal() {
     document.getElementById('modalTitle').textContent = 'เพิ่มสินค้า';
     document.getElementById('inputName').value = '';
     setCategorySelect('');
+    document.getElementById('inputUnit').value = '';
     document.getElementById('inputSystem').value = '';
     document.getElementById('productModal').classList.add('show');
     setTimeout(() => document.getElementById('inputName').focus(), 200);
@@ -650,6 +660,7 @@ function openEditModal(id) {
     document.getElementById('modalTitle').textContent = 'แก้ไขสินค้า';
     document.getElementById('inputName').value = p.name;
     setCategorySelect(p.category);
+    document.getElementById('inputUnit').value = p.unit || '';
     document.getElementById('inputSystem').value = p.system;
     document.getElementById('productModal').classList.add('show');
   });
@@ -658,16 +669,17 @@ function openEditModal(id) {
 function saveProduct() {
   const name = document.getElementById('inputName').value.trim();
   const category = document.getElementById('inputCategory').value.trim();
+  const unit = document.getElementById('inputUnit').value.trim();
   const system = parseInt(document.getElementById('inputSystem').value) || 0;
   if (!name) { alert('กรุณากรอกชื่อสินค้า'); return; }
 
   if (editingId) {
     // SKU is no longer edited in the modal; existing sku value is kept as-is.
     const p = products.find(x => x.id === editingId);
-    if (p) { p.name = name; p.category = category; p.system = system; }
+    if (p) { p.name = name; p.category = category; p.unit = unit; p.system = system; }
     showToast('✅ แก้ไขสินค้าแล้ว');
   } else {
-    products.push({ id: genId(), name, sku: '', category, system, counted: null });
+    products.push({ id: genId(), name, sku: '', category, unit, system, counted: null });
     showToast('✅ เพิ่มสินค้าแล้ว');
   }
   saveDataToCache();

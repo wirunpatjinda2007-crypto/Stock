@@ -1,11 +1,13 @@
 /* ============================================
-   StockFlow — Cloud Sync (sync.js)
+   StockFlow — Cloud Sync (jap.js)
    ============================================ */
 
 const SUPABASE_URL = 'https://jjifrsqvftsorwyupowt.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_Z9Xpb1A5KwO89l6Z8CosSw_RjSc1MHv';
 
 let isSyncingFromCloud = false;
+let lastCloudJson = '';     // ข้อมูลล่าสุดจากคลาวด์ ใช้เช็คว่ามีอะไรเปลี่ยนไหม
+let lastLocalChange = 0;    // เวลาที่แก้ข้อมูลในเครื่องล่าสุด
 
 // 1. ดึงข้อมูลจาก Supabase มาแสดงบนหน้าเว็บ
 async function pullFromCloud() {
@@ -18,6 +20,18 @@ async function pullFromCloud() {
     if (!res.ok) return;
     const data = await res.json();
     if (Array.isArray(data) && data.length > 0) {
+      // ข้อมูลไม่เปลี่ยน ไม่ต้องวาดหน้าใหม่
+      const json = JSON.stringify(data[0]);
+      if (json === lastCloudJson) return;
+
+      // เพิ่งแก้ในเครื่อง รอให้ส่งขึ้นคลาวด์เสร็จก่อน กันข้อมูลเก่าทับ
+      if (Date.now() - lastLocalChange < 4000) return;
+
+      // กำลังพิมพ์ตัวเลขในช่องนับ ห้ามรบกวน
+      const a = document.activeElement;
+      if (a && a.tagName === 'INPUT' && a.closest('.count-controls')) return;
+
+      lastCloudJson = json;
       isSyncingFromCloud = true;
       products = Array.isArray(data[0].products) ? data[0].products : [];
       if (data[0].admin_pin) {
@@ -29,6 +43,7 @@ async function pullFromCloud() {
       isSyncingFromCloud = false;
     }
   } catch (err) {
+    isSyncingFromCloud = false;
     console.error('ดึงข้อมูลออนไลน์ไม่สำเร็จ:', err);
   }
 }
@@ -101,12 +116,14 @@ async function pushRequestsToCloud(list) {
 // 3. เชื่อมเข้ากับฟังก์ชันเดิมของ app.js อัตโนมัติ
 const originalSaveDataToCache = saveDataToCache;
 saveDataToCache = function() {
+  lastLocalChange = Date.now();
   originalSaveDataToCache();
   pushToCloud();
 };
 
 const originalSaveAdminPin = saveAdminPin;
 saveAdminPin = function(p) {
+  lastLocalChange = Date.now();
   originalSaveAdminPin(p);
   pushToCloud();
 };

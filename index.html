@@ -2,11 +2,12 @@
 <html lang="th" data-page="home">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0a2259">
 <title>StockFlow — ระบบจัดการสต๊อก</title>
+<link rel="icon" href="logo.png">
 
 <!-- Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -59,6 +60,15 @@
   .side-brand .logo-cube { width: 58px; height: 58px; margin: 0 auto 10px; display: block; }
   .side-brand h1 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.2px; }
   .side-brand p { margin: 4px 0 0; font-size: 13px; color: #bfdbfe; }
+  .logo-wrap {
+    background: #fff;
+    border-radius: 16px;
+    padding: 8px;
+    margin: 0 auto 14px;
+    width: 160px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+  }
+  .logo-wrap img { width: 100%; height: auto; display: block; }
   .side-nav {
     display: flex;
     flex-direction: column;
@@ -99,6 +109,11 @@
     width: 8px; height: 8px; border-radius: 50%;
     background: #10b981;
     box-shadow: 0 0 0 3px rgba(16,185,129,0.25);
+  }
+  .side-foot .online.offline { color: #fca5a5; }
+  .side-foot .online.offline .dot {
+    background: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239,68,68,0.25);
   }
   .side-foot .user-line { margin-top: 8px; color: #dbeafe; display: flex; align-items: center; gap: 8px; }
 
@@ -184,7 +199,6 @@
     cursor: pointer; font-size: 13px; color: #0f1d36;
   }
   .notif-item:hover { background: #f8fafc; }
-  .notif-item .sku { font-size: 11px; color: #64748b; margin-top: 2px; }
   .notif-item .tag-short { color: #dc2626; font-weight: 700; white-space: nowrap; }
   .notif-item .tag-over  { color: #ea580c; font-weight: 700; white-space: nowrap; }
   .notif-empty { padding: 20px 16px; text-align: center; color: #64748b; font-size: 13px; }
@@ -201,6 +215,14 @@
     background: #1e3a8a;
     display: flex; align-items: center; justify-content: center;
   }
+
+  /* ---------- Buttons: ใช้สีน้ำเงินชุดเดียวทั้งเว็บ ---------- */
+  .btn-primary {
+    background: #1d4ed8;
+    border-color: #1d4ed8;
+    box-shadow: 0 2px 8px rgba(29,78,216,0.25);
+  }
+  .btn-primary:hover:not(:disabled) { background: #1e40af; border-color: #1e40af; }
 
   /* ---------- Hero banner ---------- */
   .hero {
@@ -256,6 +278,7 @@
   .donut-row { display: flex; align-items: center; gap: 20px; }
   .donut { width: 120px; height: 120px; flex-shrink: 0; }
   .donut-pct { font-size: 18px; font-weight: 700; fill: #1d4ed8; }
+  .donut-cap { font-size: 9px; font-weight: 500; fill: #64748b; }
   .legend { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: 14px; color: #334155; }
   .legend .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
   .legend b { margin-left: 6px; color: #0f1d36; }
@@ -288,11 +311,10 @@
   .stat-box.diff .stat-ic { background: #ffedd5; color: #ea580c; }
   .stat-box.diff .num { color: #0f1d36; }
 
-  /* Quick actions on home */
+  /* Quick actions on home (วางไว้ใต้แบนเนอร์) */
   .quick-actions { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+  .stats-wrap > .quick-actions { margin: 0 0 16px; }
   .quick-actions .btn { padding: 12px 22px; border-radius: 12px; font-size: 14px; }
-  .quick-actions .btn-primary { background: #1d4ed8; border-color: #1d4ed8; }
-  .quick-actions .btn-primary:hover:not(:disabled) { background: #1e40af; border-color: #1e40af; }
 
   /* ---------- Page heads ---------- */
   .page-head {
@@ -328,7 +350,7 @@
   }
   .panel-title h3 { margin: 0; font-size: 19px; font-weight: 700; color: #0f1d36; }
   .panel-title p { margin: 3px 0 0; font-size: 13px; color: #64748b; }
-  .panel-head .btn-primary { padding: 11px 20px; border-radius: 12px; background: #1d4ed8; border-color: #1d4ed8; }
+  .panel-head .btn-primary { padding: 11px 20px; border-radius: 12px; }
 
   .panel .file-bar {
     margin: 0 0 14px; padding: 14px 18px;
@@ -341,11 +363,6 @@
   }
   .panel .file-bar .file-name { font-size: 15px; color: #0f1d36; }
   .panel .file-bar .file-sub { font-size: 13px; }
-  .file-close {
-    width: 28px; height: 28px;
-    display: flex; align-items: center; justify-content: center;
-    color: #64748b; flex-shrink: 0;
-  }
   .panel .search-bar { padding: 0 0 12px; background: transparent; }
   .panel .search-bar input { padding: 14px 16px 14px 46px; border-color: #cbd5e1; border-radius: 12px; }
   .panel .search-wrapper .icon { left: 16px; color: #64748b; }
@@ -353,6 +370,9 @@
   .panel .tab { padding: 9px 16px; }
   .panel .actions-bar { padding: 0 0 14px; }
   .panel .product-list { padding: 0 0 12px; }
+
+  /* ปุ่มจัดการของแอดมิน: ซ่อนไว้จนกว่าจะเข้าโหมดแอดมิน */
+  body:not(.is-admin) .actions-bar { display: none; }
 
   /* ---------- Save bar ---------- */
   .save-bar { background: #fff; border-top: 1px solid #e2e8f0; padding: 14px 28px; }
@@ -396,6 +416,7 @@
   table.rpt th, table.rpt td { padding: 12px 14px; border-bottom: 1px solid #f1f5f9; text-align: left; }
   table.rpt th { background: #f8fafc; color: #475569; font-weight: 600; font-size: 13px; }
   table.rpt td.num, table.rpt th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  table.rpt th:last-child, table.rpt td:last-child { padding-left: 28px; }
   table.rpt tr:last-child td { border-bottom: none; }
   .st { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
   .st.ok { background: #ecfdf5; color: #059669; }
@@ -571,12 +592,7 @@
 <!-- ============ Sidebar ============ -->
 <aside class="sidebar" id="sidebar">
   <div class="side-brand">
-    <svg class="logo-cube" viewBox="0 0 64 64" fill="none" aria-hidden="true">
-      <path d="M32 4 56 17v30L32 60 8 47V17L32 4Z" fill="#3b82f6"/>
-      <path d="M32 4 56 17 32 30 8 17 32 4Z" fill="#93c5fd"/>
-      <path d="M32 30v30L8 47V17l24 13Z" fill="#2563eb"/>
-      <path d="M32 30v30l24-13V17L32 30Z" fill="#1d4ed8"/>
-    </svg>
+    <div class="logo-wrap"><img src="logo.png" alt="Siam IT Thailand"></div>
     <h1>StockFlow</h1>
     <p>ระบบเช็คสต็อก</p>
   </div>
@@ -603,7 +619,7 @@
     </a>
   </nav>
   <div class="side-foot">
-    <div class="online"><span class="dot"></span>ออนไลน์</div>
+    <div class="online" id="onlineBox"><span class="dot"></span><span id="onlineText">ออนไลน์</span></div>
   </div>
 </aside>
 <div class="side-overlay" id="sideOverlay"></div>
@@ -647,6 +663,11 @@
     </div>
 
     <div class="stats-wrap">
+      <div class="quick-actions">
+        <button class="btn btn-primary" onclick="go('check')">เริ่มเช็คสต็อก</button>
+        <button class="btn btn-secondary" onclick="go('report')">ดูรายงาน</button>
+      </div>
+
       <div class="stats">
         <div class="stat-box">
           <div class="stat-ic">
@@ -696,11 +717,12 @@
         <div class="summary-card">
           <div class="summary-title">สถานะการนับ</div>
           <div class="donut-row">
-            <svg class="donut" viewBox="0 0 120 120" aria-label="สัดส่วนสถานะการนับ">
+            <svg class="donut" viewBox="0 0 120 120" aria-label="สัดส่วนรายการที่นับแล้ว">
               <circle cx="60" cy="60" r="46" fill="none" stroke="#e2e8f0" stroke-width="16"/>
               <circle id="donutOk" cx="60" cy="60" r="46" fill="none" stroke="#059669" stroke-width="16" stroke-dasharray="0 289" transform="rotate(-90 60 60)"/>
               <circle id="donutDiff" cx="60" cy="60" r="46" fill="none" stroke="#ea580c" stroke-width="16" stroke-dasharray="0 289" transform="rotate(-90 60 60)"/>
-              <text id="donutPct" x="60" y="66" text-anchor="middle" class="donut-pct">0%</text>
+              <text id="donutPct" x="60" y="60" text-anchor="middle" class="donut-pct">0%</text>
+              <text x="60" y="76" text-anchor="middle" class="donut-cap">นับแล้ว</text>
             </svg>
             <ul class="legend">
               <li><span class="dot" style="background:#059669"></span>ตรง <b id="legOk">0</b></li>
@@ -723,11 +745,6 @@
           <button class="btn btn-primary" type="submit">ส่งคำขอ</button>
         </form>
         <div id="reqList" class="req-list"></div>
-      </div>
-
-      <div class="quick-actions">
-        <button class="btn btn-primary" onclick="go('check')">เริ่มเช็คสต็อก</button>
-        <button class="btn btn-secondary" onclick="go('report')">ดูรายงาน</button>
       </div>
     </div>
   </section>
@@ -765,9 +782,6 @@
             <div class="file-sub" id="fileSub">กรุณาเลือกไฟล์ Excel เพื่อเริ่มต้น</div>
           </div>
         </div>
-        <span class="file-close" aria-hidden="true">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
-        </span>
       </div>
 
       <div class="search-bar">
@@ -775,7 +789,7 @@
           <span class="icon">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
           </span>
-          <input type="text" id="searchInput" placeholder="ค้นหาชื่อสินค้า หรือ SKU...">
+          <input type="text" id="searchInput" placeholder="ค้นหาชื่อสินค้า...">
         </div>
       </div>
 
@@ -788,9 +802,9 @@
 
       <div class="tabs">
         <div class="tab active" data-tab="all">ทั้งหมด <span class="count-badge" id="tabCountAll">0</span></div>
-        <div class="tab" data-tab="pending">ยังไม่บันทึก <span class="count-badge" id="tabCountPending">0</span></div>
-        <div class="tab" data-tab="done">มีแล้ว <span class="count-badge" id="tabCountDone">0</span></div>
-        <div class="tab" data-tab="diff">ขาด <span class="count-badge" id="tabCountDiff">0</span></div>
+        <div class="tab" data-tab="pending">ยังไม่นับ <span class="count-badge" id="tabCountPending">0</span></div>
+        <div class="tab" data-tab="done">นับแล้ว <span class="count-badge" id="tabCountDone">0</span></div>
+        <div class="tab" data-tab="diff">ต่าง <span class="count-badge" id="tabCountDiff">0</span></div>
       </div>
 
       <div class="actions-bar">
@@ -809,7 +823,7 @@
     <div class="page-head">
       <div>
         <h3>รายงานสต๊อก</h3>
-        <p>สรุปจากข้อมูลล่าสุดในหน้าเช็คสต็อก</p>
+        <p>สรุปจากข้อมูลล่าสุดในหน้าเช็คสต็อก (รายการที่ขาด/เกินจะแสดงก่อน)</p>
       </div>
       <div class="page-actions">
         <button class="btn btn-secondary" onclick="window.print()">🖨️ พิมพ์</button>
@@ -1005,9 +1019,9 @@
 <!-- ============ Scripts ============ -->
 <script src="config.js"></script>
 <script src="app.js"></script>
-<!-- ==== เพิ่มสำหรับซิงก์กับ Google Sheets (ไฟล์ sync.js ต้องวางข้างๆ app.js) ==== -->
+<!-- ==== ซิงก์กับ Supabase (ไฟล์ jap.js ต้องวางข้างๆ app.js) ==== -->
 <script src="jap.js"></script>
-<!-- ==== ระบบล็อกอินพนักงาน (ต้องรัน staff_setup.sql ใน Supabase ก่อน) ==== -->
+<!-- ==== ระบบล็อกอินพนักงาน (ต้องมีไฟล์ login.js และรัน staff_setup.sql ใน Supabase ก่อน) ==== -->
 <script src="login.js"></script>
 
 <!-- ============ Navigation, notifications, report, settings ============ -->
@@ -1019,6 +1033,7 @@
   const menuBtn     = document.getElementById('menuBtn');
   const overlay     = document.getElementById('sideOverlay');
   const toastEl     = document.getElementById('toast');
+  const adminBadge  = document.getElementById('adminBadge');
 
   // ---------- helpers ----------
   function escapeHtml(s) {
@@ -1038,8 +1053,28 @@
     return false;
   }
   function isAdmin() {
-    return document.getElementById('adminBadge').classList.contains('unlocked');
+    return adminBadge.classList.contains('unlocked');
   }
+
+  // ---------- admin class on <body> (ใช้ซ่อนปุ่มแอดมินจากผู้ใช้ทั่วไป) ----------
+  function syncAdminClass() {
+    document.body.classList.toggle('is-admin', isAdmin());
+  }
+  new MutationObserver(syncAdminClass)
+    .observe(adminBadge, { attributes: true, attributeFilter: ['class'] });
+  syncAdminClass();
+
+  // ---------- online / offline indicator ----------
+  function updateOnline() {
+    const box = document.getElementById('onlineBox');
+    const txt = document.getElementById('onlineText');
+    const on = navigator.onLine;
+    box.classList.toggle('offline', !on);
+    txt.textContent = on ? 'ออนไลน์' : 'ออฟไลน์';
+  }
+  window.addEventListener('online', updateOnline);
+  window.addEventListener('offline', updateOnline);
+  updateOnline();
 
   // ---------- page routing ----------
   function currentFromHash() {
@@ -1089,7 +1124,7 @@
 
   function logout() {
     if (!confirm('ต้องการออกจากระบบหรือไม่?')) return;
-    if (isAdmin()) document.getElementById('adminBadge').click();
+    if (isAdmin()) adminBadge.click();
     uiToast('ออกจากระบบแล้ว');
     go('home');
   }
@@ -1111,29 +1146,46 @@
   // keep settings in sync while open
   new MutationObserver(() => {
     if (document.body.dataset.page === 'settings') syncSettings();
-  }).observe(document.getElementById('adminBadge'), { attributes: true, childList: true, subtree: true, characterData: true });
+  }).observe(adminBadge, { attributes: true, childList: true, subtree: true, characterData: true });
   new MutationObserver(() => {
     if (document.body.dataset.page === 'settings') syncSettings();
   }).observe(document.getElementById('fileName'), { childList: true, characterData: true, subtree: true });
 
   // ---------- report ----------
-  function readCards() {
-    return Array.from(productList.querySelectorAll('.product-card')).map(card => {
-      const name    = card.querySelector('.product-name')?.textContent.trim() || '-';
-      const sku     = card.querySelector('.product-sku')?.textContent.trim() || '';
-      const sysTxt  = card.querySelector('.info-value')?.textContent || '0';
-      const system  = parseInt(sysTxt.replace(/[^\d-]/g, ''), 10) || 0;
-      const counted = parseInt(card.querySelector('.count-controls input')?.value, 10) || 0;
+  // อ่านจากข้อมูลจริง (products ใน app.js) ไม่ใช่จากการ์ดบนหน้าจอ
+  // เพื่อไม่ให้รายงานเปลี่ยนไปตามแท็บ/คำค้น/หมวดหมู่ที่กรองอยู่
+  const STATUS_ORDER = { short: 0, over: 1, plain: 2, ok: 3 };
+
+  function readRows() {
+    return products.map(p => {
+      const d = getDiff(p);
       let status = 'plain', label = 'ยังไม่นับ';
-      if (card.classList.contains('short')) { status = 'short'; label = 'ขาด'; }
-      else if (card.classList.contains('over')) { status = 'over'; label = 'เกิน'; }
-      else if (card.classList.contains('ok')) { status = 'ok'; label = 'ครบ'; }
-      return { name, category: (card.dataset.category || '').trim() || 'ไม่ระบุ', sku, system, counted, diff: counted - system, status, label };
+      if (d !== null) {
+        if (d === 0)      { status = 'ok';    label = 'ครบ'; }
+        else if (d < 0)   { status = 'short'; label = 'ขาด'; }
+        else              { status = 'over';  label = 'เกิน'; }
+      }
+      return {
+        name: p.name || '-',
+        category: (p.category || '').trim() || 'ไม่ระบุ',
+        system: parseInt(p.system, 10) || 0,
+        counted: d === null ? null : p.counted,
+        diff: d,
+        status,
+        label
+      };
     });
   }
 
+  function sortedRows() {
+    return readRows()
+      .map((r, i) => ({ r, i }))
+      .sort((a, b) => (STATUS_ORDER[a.r.status] - STATUS_ORDER[b.r.status]) || (a.i - b.i))
+      .map(x => x.r);
+  }
+
   function renderReport() {
-    const rows = readCards();
+    const rows = sortedRows();
     const body = document.getElementById('rpBody');
     const empty = document.getElementById('rpEmpty');
     const wrap  = document.getElementById('rpTableWrap');
@@ -1153,24 +1205,29 @@
     wrap.style.display = '';
 
     body.innerHTML = rows.map(r => {
-      const sign = r.diff > 0 ? '+' : '';
+      const countedTxt = r.counted === null ? '-' : r.counted;
+      const diffTxt = r.diff === null ? '-' : ((r.diff > 0 ? '+' : '') + r.diff);
       return `<tr>
         <td>${escapeHtml(r.name)}</td>
         <td>${escapeHtml(r.category)}</td>
         <td class="num">${r.system}</td>
-        <td class="num">${r.counted}</td>
-        <td class="num">${sign}${r.diff}</td>
+        <td class="num">${countedTxt}</td>
+        <td class="num">${diffTxt}</td>
         <td><span class="st ${r.status}">${r.label}</span></td>
       </tr>`;
     }).join('');
   }
 
   window.exportReportCsv = function () {
-    const rows = readCards();
+    const rows = sortedRows();
     if (!rows.length) { uiToast('ยังไม่มีข้อมูลให้ส่งออก'); return; }
-    const header = ['สินค้า', 'หมวดหมู่', 'SKU', 'ในระบบ', 'นับได้', 'ส่วนต่าง', 'สถานะ'];
-    const lines = [header, ...rows.map(r => [r.name, r.category, r.sku, r.system, r.counted, r.diff, r.label])]
-      .map(cols => cols.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','));
+    const header = ['สินค้า', 'หมวดหมู่', 'ในระบบ', 'นับได้', 'ส่วนต่าง', 'สถานะ'];
+    const lines = [header, ...rows.map(r => [
+      r.name, r.category, r.system,
+      r.counted === null ? '' : r.counted,
+      r.diff === null ? '' : r.diff,
+      r.label
+    ])].map(cols => cols.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','));
     const blob = new Blob(['\uFEFF' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
     const d = new Date();
     const stamp = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
@@ -1183,9 +1240,6 @@
   };
 
   // report follows changes in the list while it is open
-  productList.addEventListener('input', () => {
-    if (document.body.dataset.page === 'report') renderReport();
-  });
   new MutationObserver(() => {
     if (document.body.dataset.page === 'report') renderReport();
   }).observe(productList, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
@@ -1196,14 +1250,20 @@
   const panel     = document.getElementById('notifPanel');
   const list      = document.getElementById('notifList');
 
+  function findCard(id) {
+    return Array.from(productList.querySelectorAll('.product-card'))
+      .find(c => c.dataset.id === id);
+  }
+
   function renderBell() {
-    const issues = Array.from(productList.querySelectorAll('.product-card.short, .product-card.over'))
-      .map(card => ({
-        card,
-        name:  card.querySelector('.product-name')?.textContent.trim() || '-',
-        sku:   card.querySelector('.product-sku')?.textContent.trim() || '',
-        badge: card.querySelector('.diff-badge')?.textContent.trim() || '',
-        type:  card.classList.contains('short') ? 'short' : 'over'
+    const issues = products
+      .map(p => ({ p, d: getDiff(p) }))
+      .filter(x => x.d !== null && x.d !== 0)
+      .map(x => ({
+        id: x.p.id,
+        name: x.p.name || '-',
+        badge: x.d < 0 ? '↓ ขาด ' + Math.abs(x.d) : '↑ เกิน ' + x.d,
+        type: x.d < 0 ? 'short' : 'over'
       }));
 
     bellCount.textContent = issues.length;
@@ -1218,19 +1278,28 @@
       const row = document.createElement('div');
       row.className = 'notif-item';
       row.innerHTML =
-        `<div>
-           <div>${escapeHtml(it.name)}</div>
-           <div class="sku">${escapeHtml(it.sku)}</div>
-         </div>
+        `<div>${escapeHtml(it.name)}</div>
          <div class="tag-${it.type}">${escapeHtml(it.badge)}</div>`;
       row.addEventListener('click', () => {
         panel.hidden = true;
         if (document.body.dataset.page !== 'check') go('check');
         setTimeout(() => {
-          it.card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          it.card.classList.remove('card-flash');
-          void it.card.offsetWidth;
-          it.card.classList.add('card-flash');
+          let card = findCard(it.id);
+          // ถ้าการ์ดถูกกรองซ่อนอยู่ ให้ล้างตัวกรองก่อน
+          if (!card || card.classList.contains('cat-hidden')) {
+            const allTab = document.querySelector('.tab[data-tab="all"]');
+            if (allTab) allTab.click();
+            const s = document.getElementById('searchInput');
+            if (s && s.value) { s.value = ''; s.dispatchEvent(new Event('input')); }
+            const cf = document.getElementById('catFilter');
+            if (cf && cf.value !== 'all') { cf.value = 'all'; cf.dispatchEvent(new Event('change')); }
+            card = findCard(it.id);
+          }
+          if (!card) return;
+          card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          card.classList.remove('card-flash');
+          void card.offsetWidth;
+          card.classList.add('card-flash');
         }, 80);
       });
       list.appendChild(row);

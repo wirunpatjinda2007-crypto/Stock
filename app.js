@@ -1,5 +1,5 @@
 /* ============================================
-   StockSiamIT — Application Logic
+   StockFlow — Application Logic
    ============================================ */
 
 // ============ State ============
@@ -487,8 +487,7 @@ function renderSummaryCharts() {
 
 // ============ Requests / messages from staff (home page) ============
 // Local copy in localStorage; synced to cloud by sync.js and written to the Excel file as a second sheet.
-const REQ_KEY = 'stockflow
-   _requests';
+const REQ_KEY = 'stockflow_requests';
 const REQ_SHEET_NAME = 'Sheet1';   // ชีตที่ใช้เก็บคำขอ/คอมเม้น
 const REQ_ID_COL = 'รหัส';          // คอลัมน์รหัสสำหรับกันข้อมูลซ้ำ
 

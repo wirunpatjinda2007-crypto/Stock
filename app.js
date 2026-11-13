@@ -585,7 +585,6 @@ function renderList() {
     const s = searchTerm.toLowerCase();
     list = list.filter(p =>
       (p.name || '').toLowerCase().includes(s) ||
-      (p.sku || '').toLowerCase().includes(s) ||
       (p.category || '').toLowerCase().includes(s)
     );
   }
@@ -627,7 +626,6 @@ function renderList() {
         <div class="product-header">
           <div class="product-title">
             <div class="product-name">${escapeHtml(p.name)}</div>
-            ${p.sku ? `<span class="product-sku">${escapeHtml(p.sku)}</span>` : ''}
             ${p.note ? `<div class="product-note">${escapeHtml(p.note)}</div>` : ''}
           </div>
           ${diffHtml}

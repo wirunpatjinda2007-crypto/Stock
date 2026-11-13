@@ -593,6 +593,29 @@
     .main { margin: 0; }
     body { background: #fff; }
   }
+
+  /* ---------- iPhone: เว้นที่ให้แถบสถานะ (เวลา / สัญญาณ / แบตเตอรี่) และขอบจอ ---------- */
+  .topbar {
+    padding-top: calc(14px + env(safe-area-inset-top, 0px));
+    padding-left: max(28px, env(safe-area-inset-left, 0px));
+    padding-right: max(28px, env(safe-area-inset-right, 0px));
+  }
+  .sidebar { padding-top: calc(28px + env(safe-area-inset-top, 0px)); }
+  @media (max-width: 899px) {
+    .topbar {
+      padding-top: calc(12px + env(safe-area-inset-top, 0px));
+      padding-left: max(16px, env(safe-area-inset-left, 0px));
+      padding-right: max(16px, env(safe-area-inset-right, 0px));
+    }
+  }
+  @media (max-width: 599px) {
+    .topbar {
+      padding-top: calc(10px + env(safe-area-inset-top, 0px));
+      padding-left: max(14px, env(safe-area-inset-left, 0px));
+      padding-right: max(14px, env(safe-area-inset-right, 0px));
+    }
+    .notif-panel { top: calc(42px + 4px); }
+  }
 </style>
 </head>
 <body data-page="home">

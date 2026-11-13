@@ -65,8 +65,15 @@
     width: 170px;
   }
   .logo-wrap img { width: 100%; height: auto; display: block; opacity: 0; transition: opacity .2s; }
-  /* พื้นขาวถูกลบแล้ว: คงสีเดิมของตัวอักษรไว้ */
-  .logo-wrap.ready img { opacity: 1; }
+  /* พื้นขาวถูกลบแล้ว: คงสีเดิมของตัวอักษรไว้ และใส่ขอบสีขาวให้อ่านชัดบนพื้นเข้ม */
+  .logo-wrap.ready img {
+    opacity: 1;
+    filter:
+      drop-shadow(1.5px 0 0 #fff)
+      drop-shadow(-1.5px 0 0 #fff)
+      drop-shadow(0 1.5px 0 #fff)
+      drop-shadow(0 -1.5px 0 #fff);
+  }
   /* ถ้าลบพื้นหลังไม่สำเร็จ ให้กลับไปใช้กรอบสีขาวเหมือนเดิม */
   .logo-wrap.fallback { background: #fff; border-radius: 16px; padding: 8px; box-shadow: 0 6px 16px rgba(0,0,0,0.25); }
   .logo-wrap.fallback img { opacity: 1; }

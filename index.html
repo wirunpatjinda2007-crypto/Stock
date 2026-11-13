@@ -61,14 +61,15 @@
   .side-brand h1 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.2px; }
   .side-brand p { margin: 4px 0 0; font-size: 13px; color: #bfdbfe; }
   .logo-wrap {
-    background: #fff;
-    border-radius: 16px;
-    padding: 8px;
     margin: 0 auto 14px;
-    width: 160px;
-    box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+    width: 170px;
   }
-  .logo-wrap img { width: 100%; height: auto; display: block; }
+  .logo-wrap img { width: 100%; height: auto; display: block; opacity: 0; transition: opacity .2s; }
+  /* พื้นขาวถูกลบแล้ว: แสดงเป็นตัวอักษรสีขาวให้อ่านชัดบนแถบสีเข้ม */
+  .logo-wrap.ready img { opacity: 1; filter: brightness(0) invert(1); }
+  /* ถ้าลบพื้นหลังไม่สำเร็จ ให้กลับไปใช้กรอบสีขาวเหมือนเดิม */
+  .logo-wrap.fallback { background: #fff; border-radius: 16px; padding: 8px; box-shadow: 0 6px 16px rgba(0,0,0,0.25); }
+  .logo-wrap.fallback img { opacity: 1; }
   .side-nav {
     display: flex;
     flex-direction: column;
@@ -592,7 +593,7 @@
 <!-- ============ Sidebar ============ -->
 <aside class="sidebar" id="sidebar">
   <div class="side-brand">
-    <div class="logo-wrap"><img src="logo.png" alt="Siam IT Thailand"></div>
+    <div class="logo-wrap" id="logoWrap"><img id="logoImg" src="logo.png" alt="Siam IT Thailand"></div>
     <h1>StockFlow</h1>
     <p>ระบบเช็คสต็อก</p>
   </div>
@@ -1382,6 +1383,43 @@
 
   new MutationObserver(decorate).observe(productList, { childList: true, subtree: true });
   decorate();
+})();
+</script>
+<!-- ============ Logo: ลบพื้นขาวออกอัตโนมัติ ============ -->
+<script>
+(function () {
+  const wrap = document.getElementById('logoWrap');
+  const img  = document.getElementById('logoImg');
+  if (!wrap || !img) return;
+
+  function process() {
+    if (img.dataset.done) return;
+    img.dataset.done = '1';
+    try {
+      const c = document.createElement('canvas');
+      c.width = img.naturalWidth;
+      c.height = img.naturalHeight;
+      const ctx = c.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      const d = ctx.getImageData(0, 0, c.width, c.height);
+      const px = d.data;
+      const HI = 238, LO = 205; // ขาวจัดกว่า HI = โปร่งใส, ระหว่าง LO-HI = ขอบนุ่ม
+      for (let i = 0; i < px.length; i += 4) {
+        const m = Math.min(px[i], px[i + 1], px[i + 2]);
+        if (m >= HI) px[i + 3] = 0;
+        else if (m > LO) px[i + 3] = Math.round(px[i + 3] * (HI - m) / (HI - LO));
+      }
+      ctx.putImageData(d, 0, 0);
+      img.src = c.toDataURL('image/png');
+      wrap.classList.add('ready');
+    } catch (e) {
+      wrap.classList.add('fallback');
+    }
+  }
+
+  img.addEventListener('error', () => wrap.classList.add('fallback'));
+  if (img.complete && img.naturalWidth) process();
+  else img.addEventListener('load', process);
 })();
 </script>
 </body>

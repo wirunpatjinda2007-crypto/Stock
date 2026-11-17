@@ -317,22 +317,19 @@ function updateAdminUI() {
   const badge = document.getElementById('adminBadge');
   const text = document.getElementById('adminText');
   const icon = document.getElementById('adminIcon');
-  const banner = document.getElementById('readonlyBanner');
   const fab = document.getElementById('fabAdd');
   const adminBtns = document.querySelectorAll('.admin-only');
 
   if (isAdmin) {
     badge.classList.add('unlocked');
-    text.textContent = 'แอดมิน';
+    text.textContent = 'คนเติมสต๊อก';
     icon.textContent = '🔒';
-    banner.style.display = 'none';
     fab.classList.remove('hidden');
     adminBtns.forEach(b => b.disabled = false);
   } else {
     badge.classList.remove('unlocked');
-    text.textContent = 'โหมดทั่วไป';
+    text.textContent = 'เข้าโหมดคนเติมสต๊อก';
     icon.textContent = '🔓';
-    banner.style.display = 'block';
     fab.classList.add('hidden');
     adminBtns.forEach(b => b.disabled = true);
     if (selectMode) exitSelectMode();
@@ -341,11 +338,11 @@ function updateAdminUI() {
 
 function handleAdminClick() {
   if (isAdmin) {
-    if (confirm('ออกจากโหมดแอดมิน?')) {
+    if (confirm('ออกจากโหมดคนเติมสต๊อก?')) {
       isAdmin = false;
       updateAdminUI();
       render();
-      showToast('ออกจากโหมดแอดมินแล้ว');
+      showToast('ออกจากโหมดคนเติมสต๊อกแล้ว');
     }
   } else {
     openPinModal();
@@ -355,7 +352,7 @@ function handleAdminClick() {
 function openPinModal(callback) {
   pinBuffer = '';
   pinCallback = callback || null;
-  document.getElementById('pinTitle').textContent = callback ? '🔐 ยืนยันตัวตน' : '🔐 เข้าสู่โหมดแอดมิน';
+  document.getElementById('pinTitle').textContent = callback ? '🔐 ยืนยันตัวตน' : '🔐 เข้าสู่โหมดคนเติมสต๊อก';
   document.getElementById('pinError').textContent = '';
   renderPinDots();
   document.getElementById('pinModal').classList.add('show');
@@ -390,7 +387,7 @@ function checkPin() {
       isAdmin = true;
       updateAdminUI();
       render();
-      showToast('✅ เข้าสู่โหมดแอดมินแล้ว');
+      showToast('✅ เข้าสู่โหมดคนเติมสต๊อกแล้ว');
     }
     pinBuffer = '';
   } else {
@@ -512,7 +509,7 @@ function renderList() {
       <div class="empty-state" style="grid-column: 1/-1;">
         <div class="icon">📦</div>
         <div class="title">ไม่พบรายการสินค้า</div>
-        <div class="desc">${isAdmin ? 'กดปุ่ม + เพื่อเพิ่มสินค้า หรือเปิดไฟล์ Excel' : 'กรุณาให้แอดมินเพิ่มสินค้า'}</div>
+        <div class="desc">${isAdmin ? 'กดปุ่ม + เพื่อเพิ่มสินค้า หรือเปิดไฟล์ Excel' : 'กรุณาเข้าโหมดคนเติมสต๊อกเพื่อเพิ่มสินค้า'}</div>
       </div>`;
     return;
   }

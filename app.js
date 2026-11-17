@@ -11,9 +11,6 @@ let currentTab = 'all';
 let searchTerm = '';
 let pinBuffer = '';
 let pinCallback = null;
-let selectMode = false;
-let selectedIds = new Set();
-let pendingDeleteAction = null;
 
 // หน้าเติมสต็อก
 let restockTab = 'none';      // 'none' = ยังไม่ได้เติม, 'waiting' = รอเติม, 'done' = เติมแล้ว
@@ -128,9 +125,11 @@ async function parseExcelFile(file) {
 
 function parseRestockStatus(text, restockedQty) {
   const t = String(text || '').trim();
-  if (t === 'เติมแล้ว') return 'done';
-  if (t === 'รอเติม') return 'waiting';
-  if (t === 'ยังไม่ได้เติม') return 'none';
+  if (t) {
+    if (t.includes('ยังไม่')) return 'none';
+    if (t.includes('รอ')) return 'waiting';
+    if (t.includes('แล้ว')) return 'done';
+  }
   return restockedQty > 0 ? 'done' : 'none';
 }
 
@@ -327,22 +326,18 @@ function updateAdminUI() {
   const badge = document.getElementById('adminBadge');
   const text = document.getElementById('adminText');
   const icon = document.getElementById('adminIcon');
-  const fab = document.getElementById('fabAdd');
   const adminBtns = document.querySelectorAll('.admin-only');
 
   if (isAdmin) {
     badge.classList.add('unlocked');
     text.textContent = 'คนเติมสต๊อก';
     icon.textContent = '🔒';
-    fab.classList.remove('hidden');
     adminBtns.forEach(b => b.disabled = false);
   } else {
     badge.classList.remove('unlocked');
     text.textContent = 'เข้าโหมดคนเติมสต๊อก';
     icon.textContent = '🔓';
-    fab.classList.add('hidden');
     adminBtns.forEach(b => b.disabled = true);
-    if (selectMode) exitSelectMode();
   }
 }
 
@@ -519,7 +514,7 @@ function renderList() {
       <div class="empty-state" style="grid-column: 1/-1;">
         <div class="icon">📦</div>
         <div class="title">ไม่พบรายการสินค้า</div>
-        <div class="desc">${isAdmin ? 'กดปุ่ม + เพื่อเพิ่มสินค้า หรือเปิดไฟล์ Excel' : 'กรุณาเข้าโหมดคนเติมสต๊อกเพื่อเพิ่มสินค้า'}</div>
+        <div class="desc">${isAdmin ? 'เปิดไฟล์ Excel ในหน้านี้เพื่อดึงรายการสินค้า' : 'กรุณาเปิดไฟล์ Excel เพื่อดึงรายการสินค้า'}</div>
       </div>`;
     return;
   }
@@ -540,13 +535,9 @@ function renderList() {
         diffHtml = `<span class="diff-badge over">↑ เกิน ${diff}</span>`;
       }
     }
-    const isSelected = selectedIds.has(p.id);
     return `
-      <div class="product-card ${cardClass} ${isSelected ? 'selected' : ''}"
-           data-id="${p.id}" data-category="${escapeHtml(p.category || '')}"
-           onclick="handleCardClick(event, '${p.id}')">
-        <div class="checkbox"></div>
-        ${isAdmin ? `<button class="delete-btn" onclick="event.stopPropagation(); deleteSingle('${p.id}')" title="ลบ">✕</button>` : ''}
+      <div class="product-card ${cardClass}"
+           data-id="${p.id}" data-category="${escapeHtml(p.category || '')}">
         <div class="product-header">
           <div class="product-title">
             <div class="product-name">${escapeHtml(p.name)}</div>
@@ -587,7 +578,6 @@ function renderList() {
     `;
   }).join('');
 
-  updateSelectionBar();
 }
 
 // ============ Restock (หน้าเติมสต็อก) ============
@@ -700,89 +690,6 @@ function setRestockStatus(id, key) {
 
 function render() { renderStats(); renderList(); renderRestock(); updateSaveBar(); }
 
-// ============ Selection Mode ============
-function toggleSelectMode() {
-  if (selectMode) exitSelectMode();
-  else enterSelectMode();
-}
-
-function enterSelectMode() {
-  if (!isAdmin) { requireAdmin(() => enterSelectMode()); return; }
-  selectMode = true;
-  selectedIds.clear();
-  document.body.classList.add('select-mode');
-  document.getElementById('selectionBar').classList.add('show');
-  document.getElementById('selectModeBtn').textContent = '✖ ยกเลิก';
-  document.getElementById('fabAdd').classList.add('hidden');
-  document.getElementById('saveBar').style.display = 'none';
-  renderList();
-}
-
-function exitSelectMode() {
-  selectMode = false;
-  selectedIds.clear();
-  document.body.classList.remove('select-mode');
-  document.getElementById('selectionBar').classList.remove('show');
-  document.getElementById('selectModeBtn').textContent = '☑️ เลือกลบ';
-  if (isAdmin) document.getElementById('fabAdd').classList.remove('hidden');
-  if (fileHandle) document.getElementById('saveBar').style.display = 'flex';
-  renderList();
-}
-
-function handleCardClick(event, id) {
-  if (!selectMode) return;
-  event.preventDefault();
-  if (selectedIds.has(id)) selectedIds.delete(id);
-  else selectedIds.add(id);
-  renderList();
-}
-
-function updateSelectionBar() {
-  const n = selectedIds.size;
-  document.getElementById('selectedCount').textContent = n;
-  document.getElementById('deleteSelectedBtn').disabled = n === 0;
-}
-
-function deleteSelected() {
-  if (selectedIds.size === 0) return;
-  const n = selectedIds.size;
-  pendingDeleteAction = () => {
-    products = products.filter(p => !selectedIds.has(p.id));
-    saveDataToCache();
-    exitSelectMode();
-    render();
-    showToast(`🗑️ ลบ ${n} รายการแล้ว`);
-  };
-  showConfirmDelete('🗑️ ลบสินค้าที่เลือก', `ต้องการลบสินค้า ${n} รายการที่เลือกหรือไม่? (ไม่สามารถกู้คืนได้)`);
-}
-
-function deleteSingle(id) {
-  const p = products.find(x => x.id === id);
-  if (!p) return;
-  pendingDeleteAction = () => {
-    products = products.filter(x => x.id !== id);
-    saveDataToCache();
-    render();
-    showToast('🗑️ ลบสินค้าแล้ว');
-  };
-  showConfirmDelete('🗑️ ลบสินค้า', `ต้องการลบ "${p.name}" หรือไม่?`);
-}
-
-function showConfirmDelete(title, text) {
-  document.getElementById('confirmDeleteTitle').textContent = title;
-  document.getElementById('confirmDeleteText').textContent = text;
-  document.getElementById('confirmDeleteModal').classList.add('show');
-}
-
-function confirmDeleteExecute() {
-  closeModal('confirmDeleteModal');
-  if (pendingDeleteAction) {
-    const fn = pendingDeleteAction;
-    pendingDeleteAction = null;
-    fn();
-  }
-}
-
 // ============ Count Actions ============
 // ถ้านับใหม่ ให้ล้างสถานะ "เติมแล้ว" เพราะจำนวนที่ขาดอาจเปลี่ยนไป
 function changeCount(id, delta) {
@@ -824,21 +731,6 @@ function setCategorySelect(value) {
   sel.value = v;
 }
 
-function openAddModal() {
-  requireAdmin(() => {
-    editingId = null;
-    document.getElementById('modalTitle').textContent = 'เพิ่มสินค้า';
-    document.getElementById('inputName').value = '';
-    setCategorySelect('');
-    document.getElementById('inputUnit').value = '';
-    document.getElementById('inputNote').value = '';
-    document.getElementById('inputSystem').value = '';
-    document.getElementById('inputRestockStatus').value = 'none';
-    document.getElementById('productModal').classList.add('show');
-    setTimeout(() => document.getElementById('inputName').focus(), 200);
-  });
-}
-
 function openEditModal(id) {
   requireAdmin(() => {
     const p = products.find(x => x.id === id);
@@ -876,9 +768,6 @@ function saveProduct() {
       p.restocked = p.restockStatus === 'done' ? (getNeed(p) || p.restocked || 0) : 0;
     }
     showToast('✅ แก้ไขสินค้าแล้ว');
-  } else {
-    products.push({ id: genId(), name, sku: '', category, unit, note, system, counted: null, restocked: 0, restockStatus: status });
-    showToast('✅ เพิ่มสินค้าแล้ว');
   }
   saveDataToCache();
   closeModal('productModal');
@@ -892,19 +781,6 @@ function resetCount() {
     saveDataToCache();
     render();
     showToast('🔄 รีเซ็ตการนับแล้ว');
-  });
-}
-
-function clearAll() {
-  requireAdmin(() => {
-    if (products.length === 0) { showToast('ไม่มีข้อมูลให้ลบ'); return; }
-    pendingDeleteAction = () => {
-      products = [];
-      saveDataToCache();
-      render();
-      showToast('🗑️ ลบข้อมูลทั้งหมดแล้ว');
-    };
-    showConfirmDelete('🗑️ ลบทั้งหมด', 'ต้องการลบสินค้าทั้งหมดหรือไม่? (ไม่สามารถกู้คืนได้)');
   });
 }
 

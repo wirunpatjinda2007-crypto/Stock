@@ -400,7 +400,15 @@
     background: #f1f5f9; color: #64748b; border-radius: 999px; font-size: 11px; font-weight: 700;
   }
   .rs-tab.active .count-badge { background: rgba(255,255,255,0.15); color: #fff; }
-  #restockList .product-footer .btn { padding: 12px 16px; border-radius: 10px; }
+  .rs-status { display: flex; gap: 6px; width: 100%; }
+  .rs-btn {
+    flex: 1; padding: 11px 6px; border-radius: 10px; border: 1px solid #cbd5e1;
+    background: #fff; font: inherit; font-size: 12px; font-weight: 600; color: #475569; cursor: pointer;
+  }
+  .rs-btn:hover { background: #f8fafc; }
+  .rs-btn.active.none    { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+  .rs-btn.active.waiting { background: #fffbeb; color: #d97706; border-color: #fde68a; }
+  .rs-btn.active.done    { background: #ecfdf5; color: #059669; border-color: #a7f3d0; }
 
   /* ---------- Report page ---------- */
   .summary-grid {
@@ -829,15 +837,15 @@
     <div class="page-head">
       <div>
         <h3>เติมสต็อก</h3>
-        <p>รายการที่นับแล้วพบว่าขาด — เติมตามจำนวนที่ระบุ แล้วกด "เติมแล้ว"</p>
+        <p>รายการที่นับแล้วพบว่าขาด — เลือกสถานะ ยังไม่ได้เติม / รอเติม / เติมแล้ว</p>
       </div>
     </div>
 
     <div class="summary-grid">
-      <div class="sum-card short"><div class="sl">ต้องเติม (รายการ)</div><div class="sv" id="rsTodo">0</div></div>
+      <div class="sum-card short"><div class="sl">ยังไม่ได้เติม (รายการ)</div><div class="sv" id="rsNone">0</div></div>
+      <div class="sum-card over"><div class="sl">รอเติม (รายการ)</div><div class="sv" id="rsWaiting">0</div></div>
       <div class="sum-card ok"><div class="sl">เติมแล้ว (รายการ)</div><div class="sv" id="rsDone">0</div></div>
-      <div class="sum-card"><div class="sl">รวมจำนวนที่ต้องเติม</div><div class="sv" id="rsQty">0</div></div>
-      <div class="sum-card"><div class="sl">ยังไม่ได้นับ</div><div class="sv" id="rsPending">0</div></div>
+      <div class="sum-card"><div class="sl">จำนวนที่ยังต้องเติม</div><div class="sv" id="rsQty">0</div></div>
     </div>
 
     <section class="panel">
@@ -851,7 +859,8 @@
       </div>
 
       <div class="rs-tabs">
-        <div class="rs-tab active" data-rs-tab="todo">ต้องเติม <span class="count-badge" id="rsTabCountTodo">0</span></div>
+        <div class="rs-tab active" data-rs-tab="none">ยังไม่ได้เติม <span class="count-badge" id="rsTabCountNone">0</span></div>
+        <div class="rs-tab" data-rs-tab="waiting">รอเติม <span class="count-badge" id="rsTabCountWaiting">0</span></div>
         <div class="rs-tab" data-rs-tab="done">เติมแล้ว <span class="count-badge" id="rsTabCountDone">0</span></div>
       </div>
 
@@ -937,7 +946,6 @@
         <option value="">— เลือกหมวดหมู่ —</option>
         <option value="ของใช้">ของใช้</option>
         <option value="ของกิน">ของกิน</option>
-        <option value="ของจิปาถะ">ของจิปาถะ</option>
       </select>
     </div>
     <div class="form-group">

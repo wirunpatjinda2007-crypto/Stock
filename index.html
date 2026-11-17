@@ -295,18 +295,6 @@
   .cat-bar-track { height: 10px; background: #e2e8f0; border-radius: 999px; overflow: hidden; }
   .cat-bar-fill { height: 100%; background: linear-gradient(90deg, #93c5fd, #2563eb); border-radius: 999px; transition: width .4s; }
   .cat-empty { font-size: 13px; color: #64748b; }
-  .requests-card { margin-top: 16px; }
-  .req-form { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
-  .req-form .req-name { flex: 0 0 140px; }
-  .req-form .req-text { flex: 1 1 200px; }
-  .req-form input { padding: 10px 12px; font: inherit; font-size: 14px; border: 1px solid #cbd5e1; border-radius: 10px; min-width: 0; }
-  .req-form input:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.15); }
-  .req-list { display: grid; gap: 8px; max-height: 260px; overflow-y: auto; }
-  .req-item { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; padding: 10px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 14px; color: #0f1d36; }
-  .req-item .req-meta { font-size: 12px; color: #64748b; margin-bottom: 2px; }
-  .req-item .req-del { border: none; background: none; color: #dc2626; cursor: pointer; font-size: 16px; line-height: 1; }
-  .req-empty { font-size: 13px; color: #64748b; }
-  @media (max-width: 599px) { .req-form .req-name { flex: 1 1 100%; } .req-form .req-text { flex: 1 1 100%; } .req-form .btn { width: 100%; } }
   @media (max-width: 899px) { .summary-wrap { grid-template-columns: 1fr; } }
   @media (max-width: 599px) { .donut-row { gap: 14px; } .donut { width: 96px; height: 96px; } }
   .stat-box .label { margin-bottom: 8px; font-size: 14px; color: #334155; font-weight: 600; }
@@ -398,6 +386,22 @@
   body:not([data-page="check"]) .selection-bar,
   body:not([data-page="check"]) .fab { display: none !important; }
 
+  /* ---------- Restock page ---------- */
+  .rs-tabs { display: flex; gap: 6px; padding: 0 0 14px; overflow-x: auto; scrollbar-width: none; }
+  .rs-tabs::-webkit-scrollbar { display: none; }
+  .rs-tab {
+    padding: 9px 16px; border-radius: 999px; cursor: pointer;
+    font-size: 13px; font-weight: 600; color: #475569;
+    background: #fff; border: 1px solid #e2e8f0; white-space: nowrap; user-select: none;
+  }
+  .rs-tab.active { background: #0f172a; color: #fff; border-color: #0f172a; }
+  .rs-tab .count-badge {
+    display: inline-block; margin-left: 6px; padding: 1px 6px;
+    background: #f1f5f9; color: #64748b; border-radius: 999px; font-size: 11px; font-weight: 700;
+  }
+  .rs-tab.active .count-badge { background: rgba(255,255,255,0.15); color: #fff; }
+  #restockList .product-footer .btn { padding: 12px 16px; border-radius: 10px; }
+
   /* ---------- Report page ---------- */
   .summary-grid {
     display: grid;
@@ -433,16 +437,6 @@
   .st.plain { background: #f1f5f9; color: #64748b; }
   .rpt-empty { margin: 16px 28px 0; padding: 40px; text-align: center; color: #64748b; background: #fff; border: 1px dashed #cbd5e1; border-radius: 14px; }
 
-  /* ---------- Settings page ---------- */
-  .setting-list { display: flex; flex-direction: column; gap: 12px; margin: 20px 28px 0; }
-  .setting-card {
-    display: flex; align-items: center; justify-content: space-between; gap: 16px;
-    background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px 20px;
-  }
-  .setting-card .sc-title { font-size: 15px; font-weight: 600; color: #0f1d36; }
-  .setting-card .sc-desc { font-size: 13px; color: #64748b; margin-top: 4px; }
-  .setting-card .btn:disabled { opacity: 0.45; }
-
   /* ---------- Tablet (≤ 899px) ---------- */
   @media (max-width: 899px) {
     .sidebar {
@@ -458,7 +452,7 @@
     }
     .menu-btn { display: flex; margin-right: auto; }
     .main { margin-left: 0; }
-    .hero, .page-head, .panel, .setting-list, .table-wrap, .rpt-empty { margin-left: 14px; margin-right: 14px; }
+    .hero, .page-head, .panel, .table-wrap, .rpt-empty { margin-left: 14px; margin-right: 14px; }
     .stats-wrap { padding-left: 14px; padding-right: 14px; }
     .summary-grid { margin-left: 14px; margin-right: 14px; grid-template-columns: repeat(2, 1fr); }
     .hero { margin-top: 14px; }
@@ -528,6 +522,7 @@
     .panel .search-bar input { padding: 12px 14px 12px 42px; font-size: 14px; }
     .panel .tabs { padding-bottom: 10px; }
     .panel .tab { padding: 8px 12px; font-size: 12px; }
+    .rs-tab { padding: 8px 12px; font-size: 12px; }
     .panel .actions-bar { padding-bottom: 10px; }
 
     .summary-grid { gap: 8px; margin-top: 12px; }
@@ -535,9 +530,6 @@
     .sum-card .sv { font-size: 22px; }
     table.rpt { font-size: 12px; min-width: 520px; }
     table.rpt th, table.rpt td { padding: 10px 8px; }
-
-    .setting-card { padding: 14px; flex-direction: column; align-items: stretch; }
-    .setting-card .btn { width: 100%; }
 
     .product-list { padding-bottom: 8px; }
     .product-card { padding: 14px 12px; }
@@ -636,17 +628,13 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="18" rx="2"/><path d="M9 4V3h6v1"/><path d="m9 13 2 2 4-4"/></svg>
       เช็คสต็อก
     </a>
+    <a class="nav-item" href="#restock" data-page="restock">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8v8l9 5 9-5V8Z"/><path d="M12 11v6M9 14h6"/></svg>
+      เติมสต็อก
+    </a>
     <a class="nav-item" href="#report" data-page="report">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V11M10 20V4M16 20v-7M22 20H2"/></svg>
       รายงาน
-    </a>
-    <a class="nav-item" href="#settings" data-page="settings">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>
-      การตั้งค่า
-    </a>
-    <a class="nav-item" href="#logout" data-page="logout">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
-      ออกจากระบบ
     </a>
   </nav>
   <div class="side-foot">
@@ -689,13 +677,14 @@
       </div>
       <div>
         <h2>ระบบเช็คสต็อก</h2>
-        <p>ตรวจสอบสต็อกได้อย่างรวดเร็ว แม่นยำ และเป็นระบบ</p>
+        <p>ตรวจสอบสต็อกและเติมของได้อย่างรวดเร็ว แม่นยำ และเป็นระบบ</p>
       </div>
     </div>
 
     <div class="stats-wrap">
       <div class="quick-actions">
         <button class="btn btn-primary" onclick="go('check')">เริ่มเช็คสต็อก</button>
+        <button class="btn btn-primary" onclick="go('restock')">เติมสต็อก</button>
         <button class="btn btn-secondary" onclick="go('report')">ดูรายงาน</button>
       </div>
 
@@ -766,16 +755,6 @@
           <div class="summary-title">สรุปตามหมวดหมู่</div>
           <div id="catBars" class="cat-bars"></div>
         </div>
-      </div>
-
-      <div class="summary-card requests-card">
-        <div class="summary-title">คำขอ / ข้อความจากพนักงาน</div>
-        <form class="req-form" onsubmit="event.preventDefault(); addRequest();">
-          <input type="text" id="reqName" placeholder="ชื่อผู้ส่ง" maxlength="40" class="req-name">
-          <input type="text" id="reqText" placeholder="เช่น ถุงดำ 30*40 ใกล้หมด ขอสั่งเพิ่ม 5 แพ็ค" maxlength="200" class="req-text">
-          <button class="btn btn-primary" type="submit">ส่งคำขอ</button>
-        </form>
-        <div id="reqList" class="req-list"></div>
       </div>
     </div>
   </section>
@@ -849,6 +828,41 @@
     </section>
   </section>
 
+  <!-- ============ PAGE: เติมสต็อก ============ -->
+  <section class="page" data-page="restock">
+    <div class="page-head">
+      <div>
+        <h3>เติมสต็อก</h3>
+        <p>รายการที่นับแล้วพบว่าขาด — เติมตามจำนวนที่ระบุ แล้วกด "เติมแล้ว"</p>
+      </div>
+    </div>
+
+    <div class="summary-grid">
+      <div class="sum-card short"><div class="sl">ต้องเติม (รายการ)</div><div class="sv" id="rsTodo">0</div></div>
+      <div class="sum-card ok"><div class="sl">เติมแล้ว (รายการ)</div><div class="sv" id="rsDone">0</div></div>
+      <div class="sum-card"><div class="sl">รวมจำนวนที่ต้องเติม</div><div class="sv" id="rsQty">0</div></div>
+      <div class="sum-card"><div class="sl">ยังไม่ได้นับ</div><div class="sv" id="rsPending">0</div></div>
+    </div>
+
+    <section class="panel">
+      <div class="search-bar">
+        <div class="search-wrapper">
+          <span class="icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          </span>
+          <input type="text" id="restockSearch" placeholder="ค้นหาชื่อสินค้า หรือหมวดหมู่...">
+        </div>
+      </div>
+
+      <div class="rs-tabs">
+        <div class="rs-tab active" data-rs-tab="todo">ต้องเติม <span class="count-badge" id="rsTabCountTodo">0</span></div>
+        <div class="rs-tab" data-rs-tab="done">เติมแล้ว <span class="count-badge" id="rsTabCountDone">0</span></div>
+      </div>
+
+      <div class="product-list" id="restockList"></div>
+    </section>
+  </section>
+
   <!-- ============ PAGE: รายงาน ============ -->
   <section class="page" data-page="report">
     <div class="page-head">
@@ -886,40 +900,6 @@
     </div>
     <div class="rpt-empty" id="rpEmpty" style="display:none;">
       ยังไม่มีข้อมูล กรุณาเปิดไฟล์ในหน้า "เช็คสต็อก" ก่อน
-    </div>
-  </section>
-
-  <!-- ============ PAGE: การตั้งค่า ============ -->
-  <section class="page" data-page="settings">
-    <div class="page-head">
-      <div>
-        <h3>การตั้งค่า</h3>
-        <p>จัดการโหมดผู้ดูแลและไฟล์ที่ใช้งาน</p>
-      </div>
-    </div>
-
-    <div class="setting-list">
-      <div class="setting-card">
-        <div>
-          <div class="sc-title">โหมดผู้ดูแล</div>
-          <div class="sc-desc" id="setAdminState">โหมดทั่วไป</div>
-        </div>
-        <button class="btn btn-secondary" onclick="handleAdminClick()">สลับโหมด</button>
-      </div>
-      <div class="setting-card">
-        <div>
-          <div class="sc-title">เปลี่ยนรหัส PIN</div>
-          <div class="sc-desc">ต้องเข้าโหมดผู้ดูแลก่อน</div>
-        </div>
-        <button class="btn btn-secondary" id="setPinBtn" onclick="settingsChangePin()" disabled>เปลี่ยน PIN</button>
-      </div>
-      <div class="setting-card">
-        <div>
-          <div class="sc-title">ไฟล์ที่ใช้งานอยู่</div>
-          <div class="sc-desc" id="setFileName">ยังไม่ได้เชื่อมต่อไฟล์</div>
-        </div>
-        <button class="btn btn-secondary" onclick="openExcelFile()">เปลี่ยนไฟล์</button>
-      </div>
     </div>
   </section>
 
@@ -1055,10 +1035,10 @@
 <!-- ==== ระบบล็อกอินพนักงาน (ต้องมีไฟล์ login.js และรัน staff_setup.sql ใน Supabase ก่อน) ==== -->
 <script src="login.js"></script>
 
-<!-- ============ Navigation, notifications, report, settings ============ -->
+<!-- ============ Navigation, notifications, report ============ -->
 <script>
 (function () {
-  const PAGES = ['home', 'check', 'report', 'settings'];
+  const PAGES = ['home', 'check', 'restock', 'report'];
   const productList = document.getElementById('productList');
   const sidebar     = document.getElementById('sidebar');
   const menuBtn     = document.getElementById('menuBtn');
@@ -1077,11 +1057,6 @@
     toastEl.classList.add('show');
     clearTimeout(uiToast._t);
     uiToast._t = setTimeout(() => toastEl.classList.remove('show'), 2200);
-  }
-  function callIf(name, fallbackMsg) {
-    if (typeof window[name] === 'function') { window[name](); return true; }
-    uiToast(fallbackMsg || 'ฟังก์ชันนี้ยังไม่พร้อมใช้งาน');
-    return false;
   }
   function isAdmin() {
     return adminBadge.classList.contains('unlocked');
@@ -1121,7 +1096,6 @@
       a.classList.toggle('active', a.dataset.page === name));
     closeDrawer();
     if (name === 'report') renderReport();
-    if (name === 'settings') syncSettings();
     window.scrollTo(0, 0);
   }
 
@@ -1146,41 +1120,10 @@
   document.querySelectorAll('.nav-item').forEach(a => {
     a.addEventListener('click', e => {
       e.preventDefault();
-      const target = a.dataset.page;
-      if (target === 'logout') { logout(); return; }
-      go(target);
+      go(a.dataset.page);
       closeDrawer();
     });
   });
-
-  function logout() {
-    if (!confirm('ต้องการออกจากระบบหรือไม่?')) return;
-    if (isAdmin()) adminBadge.click();
-    uiToast('ออกจากระบบแล้ว');
-    go('home');
-  }
-
-  // ---------- settings ----------
-  function syncSettings() {
-    const admin = isAdmin();
-    document.getElementById('setAdminState').textContent =
-      admin ? 'โหมดผู้ดูแล (เปิดอยู่)' : 'โหมดทั่วไป';
-    document.getElementById('setPinBtn').disabled = !admin;
-    document.getElementById('setFileName').textContent =
-      document.getElementById('fileName').textContent;
-  }
-  window.settingsChangePin = function () {
-    if (!isAdmin()) { uiToast('กรุณาเข้าโหมดผู้ดูแลก่อน'); return; }
-    callIf('openChangePinModal');
-  };
-
-  // keep settings in sync while open
-  new MutationObserver(() => {
-    if (document.body.dataset.page === 'settings') syncSettings();
-  }).observe(adminBadge, { attributes: true, childList: true, subtree: true, characterData: true });
-  new MutationObserver(() => {
-    if (document.body.dataset.page === 'settings') syncSettings();
-  }).observe(document.getElementById('fileName'), { childList: true, characterData: true, subtree: true });
 
   // ---------- report ----------
   // อ่านจากข้อมูลจริง (products ใน app.js) ไม่ใช่จากการ์ดบนหน้าจอ

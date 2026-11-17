@@ -15,6 +15,10 @@ let selectMode = false;
 let selectedIds = new Set();
 let pendingDeleteAction = null;
 
+// หน้าเติมสต็อก
+let restockTab = 'todo';      // 'todo' = ต้องเติม, 'done' = เติมแล้ว
+let restockSearch = '';
+
 // File System Access API
 let fileHandle = null;
 let fileName = '';
@@ -92,29 +96,6 @@ async function parseExcelFile(file) {
         const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
         const jsonData = XLSX.utils.sheet_to_json(firstSheet);
 
-        // อ่านคำขอจากชีต "คำขอ" (ถ้ามี) แล้วรวมเข้ากับรายการในเครื่อง โดยไม่ซ้ำตาม id
-        if (workbook.Sheets[REQ_SHEET_NAME]) {
-          const reqData = XLSX.utils.sheet_to_json(workbook.Sheets[REQ_SHEET_NAME]);
-          const local = loadRequests();
-          const known = new Set(local.map(r => r.id));
-          reqData.forEach(row => {
-            const id = String(row[REQ_ID_COL] || '').trim();
-            const text = String(row['คอมเม้น'] || '').trim();
-            if (!id || !text || known.has(id)) return;
-            known.add(id);
-            const at = new Date(row['วันที่']);
-            local.push({
-              id,
-              name: String(row['ชื่อ'] || 'ไม่ระบุชื่อ').trim(),
-              text,
-              at: isNaN(at) ? new Date().toISOString() : at.toISOString()
-            });
-          });
-          local.sort((a, b) => new Date(b.at) - new Date(a.at));
-          saveRequests(local);
-          renderRequests();
-        }
-
         if (jsonData.length === 0) {
           alert('ไม่พบข้อมูลในไฟล์ Excel');
           reject(new Error('No data'));
@@ -130,7 +111,8 @@ async function parseExcelFile(file) {
           unit: String(row[UNIT_COL] || '').trim(),
           note: String(row[NOTE_COL] || '').trim(),
           system: parseInt(row[c.SYSTEM]) || 0,
-          counted: (row[c.COUNTED] !== undefined && row[c.COUNTED] !== '') ? parseInt(row[c.COUNTED]) : null
+          counted: (row[c.COUNTED] !== undefined && row[c.COUNTED] !== '') ? parseInt(row[c.COUNTED]) : null,
+          restocked: parseInt(row[c.RESTOCKED]) || 0
         }));
 
         saveDataToCache();
@@ -183,6 +165,7 @@ async function saveToFile() {
         [c.COUNTED]: (p.counted === null || p.counted === '') ? '' : p.counted,
         [c.DIFF]: d === null ? '' : d,
         [c.STATUS]: status,
+        [c.RESTOCKED]: p.restocked > 0 ? p.restocked : '',
         [c.UPDATED_AT]: new Date().toLocaleString('th-TH')
       };
     });
@@ -190,16 +173,6 @@ async function saveToFile() {
     const ws = XLSX.utils.json_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, CONFIG.SHEET_NAME);
-
-    // ชีตคำขอจากพนักงาน (เขียนทุกครั้งที่บันทึก เพื่อให้มีประวัติครบในไฟล์เดียวกัน)
-    const reqRows = loadRequests().map(r => ({
-      'ชื่อ': r.name,
-      'คอมเม้น': r.text,
-      'วันที่': new Date(r.at).toLocaleString('th-TH'),
-      [REQ_ID_COL]: r.id
-    }));
-    const reqWs = XLSX.utils.json_to_sheet(reqRows.length ? reqRows : [{ 'ชื่อ': '', 'คอมเม้น': '', 'วันที่': '', [REQ_ID_COL]: '' }]);
-    XLSX.utils.book_append_sheet(wb, reqWs, REQ_SHEET_NAME);
 
     const writable = await fileHandle.createWritable();
     const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
@@ -331,6 +304,12 @@ function escapeHtml(s) {
 function getDiff(p) {
   if (p.counted === null || p.counted === undefined || p.counted === '') return null;
   return p.counted - p.system;
+}
+
+// จำนวนที่ต้องเติม = ในระบบ - นับได้ (เฉพาะรายการที่นับแล้วพบว่าขาด)
+function getNeed(p) {
+  const d = getDiff(p);
+  return (d !== null && d < 0) ? -d : 0;
 }
 
 // ============ Admin ============
@@ -485,66 +464,6 @@ function renderSummaryCharts() {
   }).join('');
 }
 
-// ============ Requests / messages from staff (home page) ============
-// Local copy in localStorage; synced to cloud by sync.js and written to the Excel file as a second sheet.
-const REQ_KEY = 'stockflow_requests';
-const REQ_SHEET_NAME = 'Sheet1';   // ชีตที่ใช้เก็บคำขอ/คอมเม้น
-const REQ_ID_COL = 'รหัส';          // คอลัมน์รหัสสำหรับกันข้อมูลซ้ำ
-
-function loadRequests() {
-  try {
-    const raw = localStorage.getItem(REQ_KEY);
-    const arr = raw ? JSON.parse(raw) : [];
-    return Array.isArray(arr) ? arr : [];
-  } catch (e) { return []; }
-}
-
-function saveRequests(list) {
-  try { localStorage.setItem(REQ_KEY, JSON.stringify(list)); }
-  catch (e) { alert('บันทึกคำขอไม่สำเร็จ (พื้นที่ของเบราว์เซอร์เต็มหรือถูกปิดไว้)'); }
-}
-
-function addRequest() {
-  const name = document.getElementById('reqName').value.trim() || 'ไม่ระบุชื่อ';
-  const text = document.getElementById('reqText').value.trim();
-  if (!text) { alert('กรุณากรอกรายการที่ต้องการ'); return; }
-  const list = loadRequests();
-  list.unshift({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name, text, at: new Date().toISOString() });
-  saveRequests(list);
-  document.getElementById('reqText').value = '';
-  renderRequests();
-  showToast('✅ ส่งคำขอแล้ว');
-}
-
-function deleteRequest(id) {
-  requireAdmin(() => {
-    if (!confirm('ลบคำขอนี้หรือไม่?')) return;
-    saveRequests(loadRequests().filter(r => r.id !== id));
-    renderRequests();
-  });
-}
-
-function renderRequests() {
-  const box = document.getElementById('reqList');
-  if (!box) return;
-  const list = loadRequests();
-  if (!list.length) {
-    box.innerHTML = '<div class="req-empty">ยังไม่มีคำขอ</div>';
-    return;
-  }
-  box.innerHTML = list.map(r => {
-    const when = new Date(r.at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
-    return `
-      <div class="req-item">
-        <div>
-          <div class="req-meta">${escapeHtml(r.name)} · ${when}</div>
-          <div>${escapeHtml(r.text)}</div>
-        </div>
-        ${isAdmin ? `<button class="req-del" onclick="deleteRequest('${r.id}')" title="ลบ">✕</button>` : ''}
-      </div>`;
-  }).join('');
-}
-
 function renderStats() {
   const total = products.length;
   const counted = products.filter(p => p.counted !== null && p.counted !== '' && p.counted !== undefined).length;
@@ -557,7 +476,6 @@ function renderStats() {
   document.getElementById('statCounted').textContent = counted;
   document.getElementById('statDiff').textContent = diff;
   renderSummaryCharts();
-  renderRequests();
 
   const pending = total - counted;
   document.getElementById('tabCountAll').textContent = total;
@@ -616,7 +534,6 @@ function renderList() {
       }
     }
     const isSelected = selectedIds.has(p.id);
-    const cat = (p.category || '').trim() || DEFAULT_CATEGORY;
     return `
       <div class="product-card ${cardClass} ${isSelected ? 'selected' : ''}"
            data-id="${p.id}" data-category="${escapeHtml(p.category || '')}"
@@ -666,7 +583,103 @@ function renderList() {
   updateSelectionBar();
 }
 
-function render() { renderStats(); renderList(); updateSaveBar(); }
+// ============ Restock (หน้าเติมสต็อก) ============
+// รายการที่ต้องเติม = นับแล้วพบว่าขาด (ในระบบ > นับได้) และยังไม่ได้กด "เติมแล้ว"
+// เมื่อกด "เติมแล้ว" จะเก็บจำนวนที่เติมไว้ใน p.restocked (บันทึกขึ้น Supabase พร้อม products)
+function renderRestock() {
+  const box = document.getElementById('restockList');
+  if (!box) return;
+
+  const todo = products.filter(p => getNeed(p) > 0 && !(p.restocked > 0));
+  const done = products.filter(p => p.restocked > 0);
+  const todoQty = todo.reduce((s, p) => s + getNeed(p), 0);
+  const uncounted = products.filter(p => getDiff(p) === null).length;
+
+  document.getElementById('rsTodo').textContent = todo.length;
+  document.getElementById('rsDone').textContent = done.length;
+  document.getElementById('rsQty').textContent = todoQty;
+  document.getElementById('rsPending').textContent = uncounted;
+  document.getElementById('rsTabCountTodo').textContent = todo.length;
+  document.getElementById('rsTabCountDone').textContent = done.length;
+
+  let list = restockTab === 'done' ? done : todo;
+  if (restockSearch) {
+    const s = restockSearch.toLowerCase();
+    list = list.filter(p =>
+      (p.name || '').toLowerCase().includes(s) ||
+      (p.category || '').toLowerCase().includes(s)
+    );
+  }
+
+  if (list.length === 0) {
+    let title = restockTab === 'done' ? 'ยังไม่มีรายการที่เติมแล้ว' : 'ไม่มีรายการที่ต้องเติม';
+    let desc = '';
+    if (restockTab === 'todo') {
+      desc = products.length === 0
+        ? 'กรุณาเปิดไฟล์ในหน้า "เช็คสต็อก" ก่อน'
+        : (uncounted > 0 ? `ยังไม่ได้นับอีก ${uncounted} รายการ` : 'สต็อกครบทุกรายการ');
+    }
+    box.innerHTML = `
+      <div class="empty-state" style="grid-column: 1/-1;">
+        <div class="icon">✅</div>
+        <div class="title">${title}</div>
+        <div class="desc">${desc}</div>
+      </div>`;
+    return;
+  }
+
+  box.innerHTML = list.map(p => {
+    const isDone = p.restocked > 0;
+    const need = isDone ? p.restocked : getNeed(p);
+    const unit = p.unit ? ' ' + escapeHtml(p.unit) : '';
+    return `
+      <div class="product-card ${isDone ? 'ok' : 'short'}" data-id="${p.id}">
+        <div class="product-header">
+          <div class="product-title">
+            <div class="product-name">${escapeHtml(p.name)}</div>
+            ${p.note ? `<div class="product-note">${escapeHtml(p.note)}</div>` : ''}
+          </div>
+          <span class="diff-badge ${isDone ? 'ok' : 'short'}">${isDone ? '✓ เติมแล้ว' : '↓ ต้องเติม'} ${need}${unit}</span>
+        </div>
+        <div class="product-info">
+          <div class="info-item">
+            <span class="info-label">หมวด</span>
+            <span class="info-value">${escapeHtml((p.category || '').trim() || DEFAULT_CATEGORY)}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">ในระบบ</span>
+            <span class="info-value">${p.system}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">นับได้</span>
+            <span class="info-value">${p.counted === null || p.counted === undefined || p.counted === '' ? '-' : p.counted}</span>
+          </div>
+        </div>
+        <div class="product-footer">
+          <button class="btn ${isDone ? 'btn-secondary' : 'btn-primary'}" style="flex:1"
+                  onclick="toggleRestocked('${p.id}')">${isDone ? '↩ ยกเลิกเติมแล้ว' : '✓ เติมแล้ว'}</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function toggleRestocked(id) {
+  const p = products.find(x => x.id === id);
+  if (!p) return;
+  if (p.restocked > 0) {
+    p.restocked = 0;
+    showToast('↩ ยกเลิกสถานะเติมแล้ว');
+  } else {
+    const need = getNeed(p);
+    if (need <= 0) { showToast('รายการนี้ไม่ต้องเติม'); return; }
+    p.restocked = need;
+    showToast(`✅ เติม ${p.name} แล้ว`);
+  }
+  saveDataToCache();
+  render();
+}
+
+function render() { renderStats(); renderList(); renderRestock(); updateSaveBar(); }
 
 // ============ Selection Mode ============
 function toggleSelectMode() {
@@ -752,12 +765,14 @@ function confirmDeleteExecute() {
 }
 
 // ============ Count Actions ============
+// ถ้านับใหม่ ให้ล้างสถานะ "เติมแล้ว" เพราะจำนวนที่ขาดอาจเปลี่ยนไป
 function changeCount(id, delta) {
   const p = products.find(x => x.id === id);
   if (!p) return;
   let cur = (p.counted === null || p.counted === undefined || p.counted === '') ? 0 : parseInt(p.counted);
   cur = Math.max(0, cur + delta);
   p.counted = cur;
+  p.restocked = 0;
   saveDataToCache();
   render();
 }
@@ -770,6 +785,7 @@ function setCount(id, val) {
     const n = parseInt(val);
     p.counted = isNaN(n) ? null : Math.max(0, n);
   }
+  p.restocked = 0;
   saveDataToCache();
   render();
 }
@@ -829,10 +845,13 @@ function saveProduct() {
   if (editingId) {
     // SKU is no longer edited in the modal; existing sku value is kept as-is.
     const p = products.find(x => x.id === editingId);
-    if (p) { p.name = name; p.category = category; p.unit = unit; p.note = note; p.system = system; }
+    if (p) {
+      if (p.system !== system) p.restocked = 0;
+      p.name = name; p.category = category; p.unit = unit; p.note = note; p.system = system;
+    }
     showToast('✅ แก้ไขสินค้าแล้ว');
   } else {
-    products.push({ id: genId(), name, sku: '', category, unit, note, system, counted: null });
+    products.push({ id: genId(), name, sku: '', category, unit, note, system, counted: null, restocked: 0 });
     showToast('✅ เพิ่มสินค้าแล้ว');
   }
   saveDataToCache();
@@ -842,8 +861,8 @@ function saveProduct() {
 
 function resetCount() {
   requireAdmin(() => {
-    if (!confirm('ต้องการรีเซ็ตตัวเลขที่นับได้ทั้งหมดหรือไม่?')) return;
-    products.forEach(p => p.counted = null);
+    if (!confirm('ต้องการรีเซ็ตตัวเลขที่นับได้ทั้งหมดหรือไม่? (สถานะเติมแล้วจะถูกล้างด้วย)')) return;
+    products.forEach(p => { p.counted = null; p.restocked = 0; });
     saveDataToCache();
     render();
     showToast('🔄 รีเซ็ตการนับแล้ว');
@@ -896,7 +915,7 @@ function setupEvents() {
     m.addEventListener('click', e => { if (e.target === m) closeModal(m.id); });
   });
 
-  // Tabs
+  // Tabs (หน้าเช็คสต็อก)
   document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -906,10 +925,24 @@ function setupEvents() {
     });
   });
 
-  // Search
+  // Search (หน้าเช็คสต็อก)
   document.getElementById('searchInput').addEventListener('input', e => {
     searchTerm = e.target.value;
     renderList();
+  });
+
+  // Tabs + Search (หน้าเติมสต็อก)
+  document.querySelectorAll('.rs-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.rs-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      restockTab = tab.dataset.rsTab;
+      renderRestock();
+    });
+  });
+  document.getElementById('restockSearch').addEventListener('input', e => {
+    restockSearch = e.target.value;
+    renderRestock();
   });
 
   // PIN keyboard

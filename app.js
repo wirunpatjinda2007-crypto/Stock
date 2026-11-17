@@ -16,7 +16,7 @@ let selectedIds = new Set();
 let pendingDeleteAction = null;
 
 // หน้าเติมสต็อก
-let restockTab = 'todo';      // 'todo' = ต้องเติม, 'done' = เติมแล้ว
+let restockTab = 'none';      // 'none' = ยังไม่ได้เติม, 'waiting' = รอเติม, 'done' = เติมแล้ว
 let restockSearch = '';
 
 // File System Access API
@@ -112,7 +112,8 @@ async function parseExcelFile(file) {
           note: String(row[NOTE_COL] || '').trim(),
           system: parseInt(row[c.SYSTEM]) || 0,
           counted: (row[c.COUNTED] !== undefined && row[c.COUNTED] !== '') ? parseInt(row[c.COUNTED]) : null,
-          restocked: parseInt(row[c.RESTOCKED]) || 0
+          restocked: parseInt(row[c.RESTOCKED]) || 0,
+          restockStatus: parseRestockStatus(row[c.RESTOCK_STATUS], parseInt(row[c.RESTOCKED]) || 0)
         }));
 
         saveDataToCache();
@@ -123,6 +124,14 @@ async function parseExcelFile(file) {
     reader.onerror = reject;
     reader.readAsArrayBuffer(file);
   });
+}
+
+function parseRestockStatus(text, restockedQty) {
+  const t = String(text || '').trim();
+  if (t === 'เติมแล้ว') return 'done';
+  if (t === 'รอเติม') return 'waiting';
+  if (t === 'ยังไม่ได้เติม') return 'none';
+  return restockedQty > 0 ? 'done' : 'none';
 }
 
 async function saveToFile() {
@@ -165,6 +174,7 @@ async function saveToFile() {
         [c.COUNTED]: (p.counted === null || p.counted === '') ? '' : p.counted,
         [c.DIFF]: d === null ? '' : d,
         [c.STATUS]: status,
+        [c.RESTOCK_STATUS]: (RESTOCK_STATUSES.find(m => m.key === getRestockStatus(p)) || {}).short || '',
         [c.RESTOCKED]: p.restocked > 0 ? p.restocked : '',
         [c.UPDATED_AT]: new Date().toLocaleString('th-TH')
       };
@@ -581,25 +591,38 @@ function renderList() {
 }
 
 // ============ Restock (หน้าเติมสต็อก) ============
-// รายการที่ต้องเติม = นับแล้วพบว่าขาด (ในระบบ > นับได้) และยังไม่ได้กด "เติมแล้ว"
-// เมื่อกด "เติมแล้ว" จะเก็บจำนวนที่เติมไว้ใน p.restocked (บันทึกขึ้น Supabase พร้อม products)
+// รายการที่ต้องเติม = นับแล้วพบว่าขาด (ในระบบ > นับได้)
+// แต่ละรายการมี 3 สถานะ: ยังไม่ได้เติม / รอเติม / เติมแล้ว (เก็บใน p.restockStatus ซิงก์ขึ้น Supabase พร้อม products)
+const RESTOCK_STATUSES = [
+  { key: 'none',    label: 'ยังไม่ได้เติมสต๊อก', short: 'ยังไม่ได้เติม' },
+  { key: 'waiting', label: 'รอเติมสต๊อก',        short: 'รอเติม' },
+  { key: 'done',    label: 'เติมสต๊อกแล้ว',      short: 'เติมแล้ว' }
+];
+
+function getRestockStatus(p) {
+  if (p.restockStatus === 'none' || p.restockStatus === 'waiting' || p.restockStatus === 'done') return p.restockStatus;
+  return p.restocked > 0 ? 'done' : 'none';   // ข้อมูลเก่าที่มีแต่จำนวนที่เติม
+}
+
 function renderRestock() {
   const box = document.getElementById('restockList');
   if (!box) return;
 
-  const todo = products.filter(p => getNeed(p) > 0 && !(p.restocked > 0));
-  const done = products.filter(p => p.restocked > 0);
-  const todoQty = todo.reduce((s, p) => s + getNeed(p), 0);
+  const items = products.filter(p => getRestockStatus(p) === 'done' || getNeed(p) > 0);
+  const groups = { none: [], waiting: [], done: [] };
+  items.forEach(p => groups[getRestockStatus(p)].push(p));
+  const openQty = groups.none.concat(groups.waiting).reduce((s, p) => s + getNeed(p), 0);
   const uncounted = products.filter(p => getDiff(p) === null).length;
 
-  document.getElementById('rsTodo').textContent = todo.length;
-  document.getElementById('rsDone').textContent = done.length;
-  document.getElementById('rsQty').textContent = todoQty;
-  document.getElementById('rsPending').textContent = uncounted;
-  document.getElementById('rsTabCountTodo').textContent = todo.length;
-  document.getElementById('rsTabCountDone').textContent = done.length;
+  document.getElementById('rsNone').textContent = groups.none.length;
+  document.getElementById('rsWaiting').textContent = groups.waiting.length;
+  document.getElementById('rsDone').textContent = groups.done.length;
+  document.getElementById('rsQty').textContent = openQty;
+  document.getElementById('rsTabCountNone').textContent = groups.none.length;
+  document.getElementById('rsTabCountWaiting').textContent = groups.waiting.length;
+  document.getElementById('rsTabCountDone').textContent = groups.done.length;
 
-  let list = restockTab === 'done' ? done : todo;
+  let list = groups[restockTab] || [];
   if (restockSearch) {
     const s = restockSearch.toLowerCase();
     list = list.filter(p =>
@@ -609,34 +632,34 @@ function renderRestock() {
   }
 
   if (list.length === 0) {
-    let title = restockTab === 'done' ? 'ยังไม่มีรายการที่เติมแล้ว' : 'ไม่มีรายการที่ต้องเติม';
+    const meta = RESTOCK_STATUSES.find(m => m.key === restockTab);
     let desc = '';
-    if (restockTab === 'todo') {
-      desc = products.length === 0
-        ? 'กรุณาเปิดไฟล์ในหน้า "เช็คสต็อก" ก่อน'
-        : (uncounted > 0 ? `ยังไม่ได้นับอีก ${uncounted} รายการ` : 'สต็อกครบทุกรายการ');
-    }
+    if (products.length === 0) desc = 'กรุณาเปิดไฟล์ในหน้า "เช็คสต็อก" ก่อน';
+    else if (restockTab === 'none' && uncounted > 0) desc = `ยังไม่ได้นับอีก ${uncounted} รายการ`;
     box.innerHTML = `
       <div class="empty-state" style="grid-column: 1/-1;">
         <div class="icon">✅</div>
-        <div class="title">${title}</div>
+        <div class="title">ไม่มีรายการที่${meta.label}</div>
         <div class="desc">${desc}</div>
       </div>`;
     return;
   }
 
   box.innerHTML = list.map(p => {
-    const isDone = p.restocked > 0;
-    const need = isDone ? p.restocked : getNeed(p);
+    const st = getRestockStatus(p);
+    const meta = RESTOCK_STATUSES.find(m => m.key === st);
+    const need = st === 'done' ? (p.restocked || getNeed(p)) : getNeed(p);
     const unit = p.unit ? ' ' + escapeHtml(p.unit) : '';
+    const cardCls = st === 'done' ? 'ok' : (st === 'waiting' ? 'over' : 'short');
+    const badgeCls = cardCls;
     return `
-      <div class="product-card ${isDone ? 'ok' : 'short'}" data-id="${p.id}">
+      <div class="product-card ${cardCls}" data-id="${p.id}">
         <div class="product-header">
           <div class="product-title">
             <div class="product-name">${escapeHtml(p.name)}</div>
             ${p.note ? `<div class="product-note">${escapeHtml(p.note)}</div>` : ''}
           </div>
-          <span class="diff-badge ${isDone ? 'ok' : 'short'}">${isDone ? '✓ เติมแล้ว' : '↓ ต้องเติม'} ${need}${unit}</span>
+          <span class="diff-badge ${badgeCls}">${meta.short} ${need}${unit}</span>
         </div>
         <div class="product-info">
           <div class="info-item">
@@ -653,27 +676,26 @@ function renderRestock() {
           </div>
         </div>
         <div class="product-footer">
-          <button class="btn ${isDone ? 'btn-secondary' : 'btn-primary'}" style="flex:1"
-                  onclick="toggleRestocked('${p.id}')">${isDone ? '↩ ยกเลิกเติมแล้ว' : '✓ เติมแล้ว'}</button>
+          <div class="rs-status">
+            ${RESTOCK_STATUSES.map(m => `
+              <button class="rs-btn ${m.key} ${m.key === st ? 'active' : ''}"
+                      onclick="setRestockStatus('${p.id}', '${m.key}')">${m.label}</button>`).join('')}
+          </div>
         </div>
       </div>`;
   }).join('');
 }
 
-function toggleRestocked(id) {
+function setRestockStatus(id, key) {
   const p = products.find(x => x.id === id);
   if (!p) return;
-  if (p.restocked > 0) {
-    p.restocked = 0;
-    showToast('↩ ยกเลิกสถานะเติมแล้ว');
-  } else {
-    const need = getNeed(p);
-    if (need <= 0) { showToast('รายการนี้ไม่ต้องเติม'); return; }
-    p.restocked = need;
-    showToast(`✅ เติม ${p.name} แล้ว`);
-  }
+  if (getRestockStatus(p) === key) return;
+  p.restockStatus = key;
+  p.restocked = key === 'done' ? (getNeed(p) || p.restocked || 0) : 0;
   saveDataToCache();
   render();
+  const meta = RESTOCK_STATUSES.find(m => m.key === key);
+  showToast(`${p.name}: ${meta.label}`);
 }
 
 function render() { renderStats(); renderList(); renderRestock(); updateSaveBar(); }
@@ -769,7 +791,7 @@ function changeCount(id, delta) {
   let cur = (p.counted === null || p.counted === undefined || p.counted === '') ? 0 : parseInt(p.counted);
   cur = Math.max(0, cur + delta);
   p.counted = cur;
-  p.restocked = 0;
+  p.restocked = 0; p.restockStatus = 'none';
   saveDataToCache();
   render();
 }
@@ -782,7 +804,7 @@ function setCount(id, val) {
     const n = parseInt(val);
     p.counted = isNaN(n) ? null : Math.max(0, n);
   }
-  p.restocked = 0;
+  p.restocked = 0; p.restockStatus = 'none';
   saveDataToCache();
   render();
 }
@@ -843,12 +865,12 @@ function saveProduct() {
     // SKU is no longer edited in the modal; existing sku value is kept as-is.
     const p = products.find(x => x.id === editingId);
     if (p) {
-      if (p.system !== system) p.restocked = 0;
+      if (p.system !== system) { p.restocked = 0; p.restockStatus = 'none'; }
       p.name = name; p.category = category; p.unit = unit; p.note = note; p.system = system;
     }
     showToast('✅ แก้ไขสินค้าแล้ว');
   } else {
-    products.push({ id: genId(), name, sku: '', category, unit, note, system, counted: null, restocked: 0 });
+    products.push({ id: genId(), name, sku: '', category, unit, note, system, counted: null, restocked: 0, restockStatus: 'none' });
     showToast('✅ เพิ่มสินค้าแล้ว');
   }
   saveDataToCache();
@@ -859,7 +881,7 @@ function saveProduct() {
 function resetCount() {
   requireAdmin(() => {
     if (!confirm('ต้องการรีเซ็ตตัวเลขที่นับได้ทั้งหมดหรือไม่? (สถานะเติมแล้วจะถูกล้างด้วย)')) return;
-    products.forEach(p => { p.counted = null; p.restocked = 0; });
+    products.forEach(p => { p.counted = null; p.restocked = 0; p.restockStatus = 'none'; });
     saveDataToCache();
     render();
     showToast('🔄 รีเซ็ตการนับแล้ว');

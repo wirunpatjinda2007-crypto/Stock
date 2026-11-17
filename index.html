@@ -822,9 +822,7 @@
       </div>
 
       <div class="actions-bar">
-        <button class="btn btn-secondary admin-only" onclick="toggleSelectMode()" disabled id="selectModeBtn">☑️ เลือกลบ</button>
         <button class="btn btn-secondary admin-only" onclick="resetCount()" disabled>🔄 รีเซ็ต</button>
-        <button class="btn btn-danger admin-only" onclick="clearAll()" disabled>🗑️ ลบทั้งหมด</button>
         <button class="btn btn-secondary admin-only" onclick="openChangePinModal()" disabled>🔑 เปลี่ยน PIN</button>
       </div>
 
@@ -910,8 +908,6 @@
 
 </div>
 
-<button class="fab hidden" id="fabAdd" onclick="openAddModal()">+</button>
-
 <!-- ============ Save Bar ============ -->
 <div class="save-bar" id="saveBar" style="display:none;">
   <div class="status" id="saveStatus">
@@ -924,18 +920,11 @@
   </button>
 </div>
 
-<!-- ============ Selection Bar ============ -->
-<div class="selection-bar" id="selectionBar">
-  <div class="count">เลือกแล้ว <strong id="selectedCount">0</strong> รายการ</div>
-  <button class="btn btn-secondary" onclick="toggleSelectMode()">ยกเลิก</button>
-  <button class="btn btn-danger" onclick="deleteSelected()" id="deleteSelectedBtn" disabled>🗑️ ลบ</button>
-</div>
-
 <!-- ============ Product Modal ============ -->
 <div class="modal" id="productModal">
   <div class="modal-content">
     <div class="modal-handle"></div>
-    <h2 id="modalTitle">เพิ่มสินค้า</h2>
+    <h2 id="modalTitle">แก้ไขสินค้า</h2>
     <div class="form-group">
       <label>ชื่อสินค้า *</label>
       <input type="text" id="inputName" placeholder="เช่น น้ำดื่ม 600ml">
@@ -1021,19 +1010,6 @@
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeModal('changePinModal')">ยกเลิก</button>
       <button class="btn btn-primary" onclick="changePin()">บันทึก</button>
-    </div>
-  </div>
-</div>
-
-<!-- ============ Confirm Delete Modal ============ -->
-<div class="modal" id="confirmDeleteModal">
-  <div class="modal-content" style="max-width:420px">
-    <div class="modal-handle"></div>
-    <h2 id="confirmDeleteTitle">🗑️ ยืนยันการลบ</h2>
-    <p id="confirmDeleteText" style="color: var(--slate-500); margin: 0 0 20px; font-size: 14px; line-height: 1.6;"></p>
-    <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="closeModal('confirmDeleteModal')">ยกเลิก</button>
-      <button class="btn btn-danger" onclick="confirmDeleteExecute()" style="background: var(--danger); color: white; border-color: transparent;">ลบเลย</button>
     </div>
   </div>
 </div>

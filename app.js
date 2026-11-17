@@ -833,6 +833,7 @@ function openAddModal() {
     document.getElementById('inputUnit').value = '';
     document.getElementById('inputNote').value = '';
     document.getElementById('inputSystem').value = '';
+    document.getElementById('inputRestockStatus').value = 'none';
     document.getElementById('productModal').classList.add('show');
     setTimeout(() => document.getElementById('inputName').focus(), 200);
   });
@@ -849,6 +850,7 @@ function openEditModal(id) {
     document.getElementById('inputUnit').value = p.unit || '';
     document.getElementById('inputNote').value = p.note || '';
     document.getElementById('inputSystem').value = p.system;
+    document.getElementById('inputRestockStatus').value = getRestockStatus(p);
     document.getElementById('productModal').classList.add('show');
   });
 }
@@ -859,18 +861,23 @@ function saveProduct() {
   const unit = document.getElementById('inputUnit').value.trim();
   const note = document.getElementById('inputNote').value.trim();
   const system = parseInt(document.getElementById('inputSystem').value) || 0;
+  const status = document.getElementById('inputRestockStatus').value || 'none';
   if (!name) { alert('กรุณากรอกชื่อสินค้า'); return; }
 
   if (editingId) {
     // SKU is no longer edited in the modal; existing sku value is kept as-is.
     const p = products.find(x => x.id === editingId);
     if (p) {
-      if (p.system !== system) { p.restocked = 0; p.restockStatus = 'none'; }
+      const prevStatus = getRestockStatus(p);
+      const systemChanged = p.system !== system;
       p.name = name; p.category = category; p.unit = unit; p.note = note; p.system = system;
+      // เปลี่ยนจำนวนในระบบแต่ไม่ได้แตะสถานะ → ถือว่าต้องเติมใหม่
+      p.restockStatus = (systemChanged && status === prevStatus) ? 'none' : status;
+      p.restocked = p.restockStatus === 'done' ? (getNeed(p) || p.restocked || 0) : 0;
     }
     showToast('✅ แก้ไขสินค้าแล้ว');
   } else {
-    products.push({ id: genId(), name, sku: '', category, unit, note, system, counted: null, restocked: 0, restockStatus: 'none' });
+    products.push({ id: genId(), name, sku: '', category, unit, note, system, counted: null, restocked: 0, restockStatus: status });
     showToast('✅ เพิ่มสินค้าแล้ว');
   }
   saveDataToCache();

@@ -23,6 +23,7 @@ const CONFIG = {
     COUNTED: 'นับได้',
     DIFF: 'ผลต่าง',
     STATUS: 'สถานะ',
+    RESTOCKED: 'เติมแล้ว',
     UPDATED_AT: 'วันที่อัปเดต'
   },
 

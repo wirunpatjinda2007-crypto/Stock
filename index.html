@@ -968,6 +968,14 @@
       <label>จำนวนในระบบ *</label>
       <input type="number" id="inputSystem" placeholder="0" min="0" inputmode="numeric">
     </div>
+    <div class="form-group">
+      <label>สถานะการเติมสต๊อก</label>
+      <select id="inputRestockStatus" class="modal-select">
+        <option value="none">ยังไม่ได้เติมสต๊อก</option>
+        <option value="waiting">รอเติมสต๊อก</option>
+        <option value="done">เติมสต๊อกแล้ว</option>
+      </select>
+    </div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeModal('productModal')">ยกเลิก</button>
       <button class="btn btn-primary" onclick="saveProduct()">บันทึก</button>
